@@ -1218,6 +1218,9 @@ input[type="range"].hidden-range {
 <script>
 // Global tracking of dial instances to allow program preset loading
 window.dialInstances = [];
+let currentHue = 120;
+let currentSat = 80;
+let pulseAmp = 0;
 
 // ================================================================
 //  PERSISTENCE SYSTEM (Active State & Layout Autosave)
@@ -1300,39 +1303,33 @@ const formatters = {
   masterTune: { label: 'Tune', fmt: v => Math.round(v) + " ct" }
 };
 
-// Dynamic Accent Color Generator based on Cutoff, Resonance, and Oscillator Frequencies
+// Dynamic Accent Color Generator based on Filter Envelope (Attack, Decay, Sustain, Release)
 function updateDynamicAccent() {
-  if (typeof P === "undefined" || !P.cutoff) return;
+  if (typeof P === "undefined" || P.fAttack === undefined) return;
   
-  // 1. Filter Cutoff Influence (Logarithmic mapping 80Hz - 12000Hz to 0.0 - 1.0)
-  const logMin = Math.log(80);
-  const logMax = Math.log(12000);
-  const logVal = Math.log(clamp(P.cutoff, 80, 12000));
-  const cutoffNorm = (logVal - logMin) / (logMax - logMin);
+  // Normalize the 4 parameters (fAttack: 0.005..8.0, fDecay: 0.005..8.0, fSustain: 0.0..1.0, fRelease: 0.005..8.0)
+  const attackNorm = clamp((P.fAttack - 0.005) / (8.0 - 0.005), 0, 1);
+  const decayNorm = clamp((P.fDecay - 0.005) / (8.0 - 0.005), 0, 1);
+  const sustainNorm = clamp(P.fSustain, 0, 1);
+  const releaseNorm = clamp((P.fRelease - 0.005) / (8.0 - 0.005), 0, 1);
 
-  // 2. Oscillator B Tuning Influence (Coarse -24..24 st, Fine -100..100 ct)
-  const coarseNorm = (P.oscBCoarse + 24) / 48; // 0.0 to 1.0
-  const fineNorm = (P.oscBFine + 100) / 200;   // 0.0 to 1.0
-
-  // 3. Oscillator A / Master Tune Influence (-100..100 ct)
-  const tuneNorm = (P.masterTune + 100) / 200; // 0.0 to 1.0
-
-  // Combined Hue calculation (Mix of filter cutoff and both oscillators frequencies)
-  // Cutoff represents 60% of the hue range (216 degrees)
-  // Osc B frequency represents 30% of the hue range (108 degrees)
-  // Master/Osc A tuning represents 10% of the hue range (36 degrees)
-  let hue = Math.round((cutoffNorm * 216) + (coarseNorm * 72) + (fineNorm * 36) + (tuneNorm * 36));
+  // Combine all 4 parameters to determine Hue
+  let hue = Math.round((attackNorm * 144) + (decayNorm * 108) + (sustainNorm * 54) + (releaseNorm * 54));
   hue = (hue + 360) % 360; // Keep within 0..359
 
-  // Saturation: Resonance (0..1) maps to 65%..95%, slightly expanded by unison detuning (0..50ct)
-  const detuneBonus = (P.unisonDetune || 0) / 50 * 5; // up to 5%
-  const sat = Math.round(65 + P.resonance * 25 + detuneBonus);
+  // Saturation: Sustain level (0..1) maps to 60%..90%, slightly influenced by Decay
+  const sat = Math.round(60 + sustainNorm * 20 + decayNorm * 10);
 
-  // Lightness: Centered around 54% to be perfectly visible and glowy
+  // Keep globally accessible for drawLoop pulsing
+  currentHue = hue;
+  currentSat = sat;
+
+  // Lightness: Centered around 54%
   const light = 54;
 
   const hslAccent = `hsl(${hue}, ${sat}%, ${light}%)`;
-  const hslGlow = `hsla(${hue}, ${sat}%, ${light}%, 0.18)`;
+  const currentGlowOpacity = 0.18 + (typeof pulseAmp !== "undefined" ? pulseAmp : 0) * 0.32;
+  const hslGlow = `hsla(${hue}, ${sat}%, ${light}%, ${currentGlowOpacity})`;
   const hslDim = `hsla(${hue}, ${sat}%, ${light}%, 0.15)`;
 
   document.documentElement.style.setProperty('--accent-color', hslAccent);
@@ -2040,6 +2037,18 @@ window.addEventListener('DOMContentLoaded', () => {
 
       const masterDial = window.dialInstances.find(d => d.canvasId === 'canvas-master');
       if (masterDial) masterDial.draw();
+
+      // Smoothly decay background pulse when a note is active
+      if (pulseAmp > 0.001) {
+        pulseAmp *= 0.94;
+        const currentGlowOpacity = 0.18 + pulseAmp * 0.32;
+        const hslGlow = `hsla(${currentHue}, ${currentSat}%, 54%, ${currentGlowOpacity})`;
+        document.documentElement.style.setProperty('--accent-glow', hslGlow);
+      } else if (pulseAmp !== 0) {
+        pulseAmp = 0;
+        const hslGlow = `hsla(${currentHue}, ${currentSat}%, 54%, 0.18)`;
+        document.documentElement.style.setProperty('--accent-glow', hslGlow);
+      }
     }
     drawLoop();
   })();
@@ -2510,6 +2519,7 @@ const noteToVoiceIds = new Map();
 
 function noteOn(note, velocity) {
   if (audioCtx.state === "suspended") audioCtx.resume();
+  pulseAmp = 1.0;
 
   if (P.unisonOn) {
     unisonVoiceIds.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, true); });
@@ -2553,7 +2563,7 @@ function allNotesOff() {
 
 // ---- Live param update ----
 function liveUpdate(key) {
-  if (key === "cutoff" || key === "resonance" || key === "oscBCoarse" || key === "oscBFine" || key === "masterTune") {
+  if (key === "fAttack" || key === "fDecay" || key === "fSustain" || key === "fRelease") {
     updateDynamicAccent();
   }
   voices.forEach(v => {

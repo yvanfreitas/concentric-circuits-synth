@@ -1,0 +1,3178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Pro-V — Concentric Arc Edition</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* =============================================
+   RESET & SYSTEM TOKENS (Concentric Arc Theme)
+============================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-main:       #0c0e0b; /* Deep forest-black */
+  --bg-card:       #121612; /* Sleek dark green-charcoal panels */
+  --bg-input:      #1a201a;
+  --text-primary:  #e0e5df; /* Off-white green tint */
+  --text-muted:    #7b8579;
+  --border-color:  #253023;
+  --led-red:       #ff3b30;
+  --led-red-dim:   #4e1714;
+  --led-green:     #00cc44;
+  --led-green-dim: #093c18;
+  --led-amber:     #ff9500;
+  
+  --ff-sans:       'Outfit', sans-serif;
+  --ff-mono:       'Share Tech Mono', monospace;
+}
+
+html, body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--ff-sans);
+  min-height: 100vh;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  user-select: none;
+  width: 100%;
+}
+
+/* =============================================
+   CHASSIS (100% screen width)
+============================================= */
+.synth-chassis {
+  width: 100%;
+  max-width: 100%;
+  background-color: var(--bg-main);
+  border: 2.5px solid var(--border-color);
+  border-radius: 20px;
+  padding: 16px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* =============================================
+   HEADER (Premium Hardware Bar)
+============================================= */
+.synth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px 32px 12px 12px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+}
+.brand-section h1 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+.brand-section span {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.lcd-display {
+  background-color: #050705;
+  color: var(--led-red);
+  font-family: var(--ff-mono);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 0 6px var(--led-red);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
+  min-width: 85px;
+  text-align: center;
+}
+
+.voices-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-input);
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.voices-label {
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.voices-leds {
+  display: flex;
+  gap: 5px;
+}
+.voice-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background-color: #171d16;
+  border: 1px solid #2d382b;
+  transition: background 0.08s, box-shadow 0.08s;
+}
+.voice-dot.on {
+  background-color: var(--led-green);
+  box-shadow: 0 0 6px var(--led-green);
+}
+
+.connection-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.midi-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background-color: var(--led-red-dim);
+  border: 1px solid var(--border-color);
+  transition: all 0.2s;
+}
+.midi-dot.on {
+  background-color: var(--led-green);
+  box-shadow: 0 0 6px var(--led-green);
+}
+
+.midi-text {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.hdr-btn {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.1s;
+}
+.hdr-btn:hover {
+  background: var(--text-primary);
+  color: var(--bg-main);
+}
+.hdr-btn.active {
+  background-color: var(--led-amber);
+  color: var(--bg-main);
+  border-color: var(--led-amber);
+}
+
+select#deviceSelect {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* =============================================
+   DRAGGABLE MODULAR GRID (100% Width Layout)
+============================================= */
+.modular-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.module-card {
+  background-color: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 16px 40px 16px 16px;
+  padding: 8px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s;
+  cursor: default;
+}
+.module-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.98) rotate(0.5deg);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  z-index: 10;
+}
+.module-card.drag-over {
+  border: 1.5px dashed var(--led-amber);
+  background-color: #172017;
+}
+
+/* Drag Handle */
+.drag-handle {
+  width: 100%;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  margin-bottom: 2px;
+  opacity: 0.3;
+  transition: opacity 0.15s;
+}
+.drag-handle:hover { opacity: 0.8; }
+.drag-handle:active { cursor: grabbing; }
+.drag-handle::before {
+  content: "";
+  width: 32px;
+  height: 5px;
+  background-image: radial-gradient(var(--text-muted) 1.5px, transparent 1.5px);
+  background-size: 5px 5px;
+}
+
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1.5px solid var(--border-color);
+  padding-bottom: 6px;
+}
+.module-title {
+  font-family: var(--ff-sans);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.module-subtitle {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* =============================================
+   CONCENTRIC GAUGE CONTAINER (Split layout)
+============================================= */
+.concentric-layout-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.concentric-canvas-container {
+  position: relative;
+  width: 150px;
+  height: 150px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+}
+.concentric-canvas {
+  width: 150px;
+  height: 150px;
+  display: block;
+}
+
+.concentric-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-input);
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  transition: background-color 0.15s;
+  cursor: ns-resize; /* Suggest scrolling/dragging adjustment */
+}
+.legend-row:hover {
+  background-color: #20271f;
+  border-color: var(--text-muted);
+}
+.legend-row.active-row {
+  background-color: rgba(255,149,0,0.1);
+  border-color: var(--led-amber);
+}
+
+.legend-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.color-swatch {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+.legend-name {
+  font-family: var(--ff-sans);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.legend-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-value {
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 50px;
+  text-align: right;
+}
+
+.learn-btn {
+  font-family: var(--ff-mono);
+  font-size: 8px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-main);
+  color: var(--text-primary);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+.learn-btn:hover { background-color: var(--text-primary); color: var(--bg-main); }
+.learn-btn.active {
+  background-color: var(--led-red);
+  color: #fff;
+  border-color: var(--led-red);
+  animation: lrn-pulse 1s infinite alternate;
+}
+@keyframes lrn-pulse { 0% { opacity: 0.65; } 100% { opacity: 1; } }
+
+input[type="range"].hidden-range {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0; height: 0;
+}
+
+/* =============================================
+   BUTTONS & TOGGLES (Aeonik Minimal Style)
+============================================= */
+.waveform-selector {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+.waveform-selector button {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 4px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.12s;
+}
+.waveform-selector button:hover {
+  background-color: #242c23;
+}
+.waveform-selector button.active {
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+.waveform-selector button svg {
+  width: 22px; height: 11px;
+  stroke: var(--text-primary);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.12s;
+}
+.waveform-selector button.active svg {
+  stroke: var(--bg-main);
+}
+.waveform-selector button .wave-indicator {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background-color: #2d382b;
+}
+.waveform-selector button.active .wave-indicator {
+  background-color: var(--led-red);
+  box-shadow: 0 0 5px var(--led-red);
+}
+.waveform-selector button span {
+  font-family: var(--ff-mono);
+  font-size: 7px;
+  color: var(--text-muted);
+}
+.waveform-selector button.active span {
+  color: var(--bg-main);
+}
+
+.toggles-group {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.button-toggle {
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-primary);
+  transition: all 0.12s;
+}
+.button-toggle:hover { background-color: #242c23; }
+.button-toggle::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background-color: #2d382b;
+  display: inline-block;
+}
+.button-toggle.on {
+  background-color: var(--text-primary);
+  color: var(--bg-main);
+  border-color: var(--text-primary);
+}
+.button-toggle.on::before {
+  background-color: var(--led-red);
+  box-shadow: 0 0 5px var(--led-red);
+}
+
+/* =============================================
+   KEY TRACK & SELECTORS
+============================================= */
+select#keyTrack {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: var(--ff-mono);
+  font-size: 11px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.octave-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-color);
+  width: fit-content;
+}
+.octave-btn {
+  background: var(--bg-main);
+  border: 1.5px solid var(--border-color);
+  border-radius: 4px;
+  width: 24px; height: 24px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.octave-btn:hover { background: var(--text-primary); color: var(--bg-main); }
+.octave-val {
+  font-family: var(--ff-mono);
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 24px;
+  text-align: center;
+}
+
+/* =============================================
+   POLY-MOD MATRIX
+============================================= */
+.poly-matrix-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-input);
+}
+.poly-matrix {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+}
+.poly-matrix th {
+  padding: 4px 6px;
+  text-transform: uppercase;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1.5px solid var(--border-color);
+  color: var(--text-muted);
+}
+.poly-matrix td {
+  padding: 6px;
+  text-align: center;
+}
+.poly-matrix td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+.poly-matrix input[type="checkbox"] {
+  width: 14px; height: 14px;
+  accent-color: var(--led-red);
+  cursor: pointer;
+}
+
+/* =============================================
+   MIDI ASSIGNMENT LIST
+============================================= */
+.midi-bank-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.midi-bank-header {
+  display: flex;
+  gap: 6px;
+}
+.midi-bank-header button {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-color);
+  border-radius: 6px;
+  padding: 5px;
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+.midi-bank-header button.active {
+  background: var(--text-primary);
+  color: var(--bg-main);
+  border-color: var(--text-primary);
+}
+.cc-list {
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  line-height: 1.8;
+  columns: 2;
+  column-gap: 12px;
+  color: var(--text-muted);
+}
+.cc-list b {
+  color: var(--text-primary);
+}
+
+.log-collapsible {
+  width: 100%;
+}
+.log-toggle-btn {
+  background: none; border: none;
+  font-family: var(--ff-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.log-toggle-btn:hover { color: var(--text-primary); }
+.log-box {
+  background: #050705;
+  color: var(--led-green);
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  height: 90px;
+  overflow-y: auto;
+  margin-top: 6px;
+  display: none;
+  white-space: pre-wrap;
+  border: 1.5px solid var(--border-color);
+}
+.log-box.open { display: block; }
+
+/* =============================================
+   VIRTUAL KEYBOARD PANEL (Relocated drawer)
+============================================= */
+.keyboard-section {
+  width: 100%;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px 32px 12px 12px;
+  padding: 10px;
+}
+.kb-hdr-btn {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-family: var(--ff-mono);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.1s;
+  width: fit-content;
+}
+.kb-hdr-btn:hover {
+  background: var(--text-primary);
+  color: var(--bg-main);
+}
+.kb-drawer {
+  width: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.kb-drawer.open {
+  display: flex;
+}
+.keyboard {
+  display: flex;
+  width: 100%;
+  height: 110px;
+  position: relative;
+  background: #000;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 2.5px solid #000;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+}
+.key {
+  cursor: pointer;
+  user-select: none;
+}
+.key.white {
+  flex: 1 0 auto;
+  background: linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+  border-right: 1.5px solid #aaa;
+  height: 100%;
+  z-index: 1;
+  position: relative;
+  border-radius: 0 0 3px 3px;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,0.1);
+}
+.key.white:hover {
+  background: linear-gradient(to bottom, #eaeaea 0%, #dcdcdc 100%);
+}
+.key.white.active {
+  background: linear-gradient(to bottom, #dbe9a6 0%, #9ecf79 100%);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.2), 0 0 8px rgba(158, 207, 121, 0.4);
+}
+.key.black {
+  flex: 0 0 0;
+  width: 0;
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+}
+.key.black::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -9px; /* Centered relative to adjacent white key line */
+  width: 18px;
+  height: 68px;
+  background: linear-gradient(to bottom, #2b302a 0%, #111410 100%);
+  border: 1px dashed #000;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.6);
+  transition: all 0.08s;
+}
+.key.black:hover::after {
+  background: linear-gradient(to bottom, #394238 0%, #191f18 100%);
+}
+.key.black.active::after {
+  background: linear-gradient(to bottom, #4bb05c 0%, #09633e 100%);
+  box-shadow: 0 0 10px rgba(75, 176, 92, 0.6), inset 0 1px 3px rgba(255,255,255,0.2);
+}
+.kb-legend {
+  font-family: var(--ff-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<div class="synth-chassis">
+
+  <!-- ============ HEADER ============ -->
+  <header class="synth-header">
+    <div class="brand-section">
+      <h1>Concentric Circuits</h1>
+      <span>Pro-V — Concentric Arc</span>
+    </div>
+
+    <div class="lcd-display" id="progLcd">01 VCE</div>
+
+    <!-- PRESET CONTROL AREA -->
+    <div class="preset-section" style="display:flex; align-items:center; gap:8px;">
+      <span class="voices-label" style="font-size: 9px; text-transform: uppercase;">Preset:</span>
+      <select id="presetSelect" style="background:var(--bg-input); color:var(--text-primary); border:1.5px solid var(--border-color); border-radius:8px; padding:5px 8px; font-family:var(--ff-mono); font-size:11px; cursor:pointer; min-width:170px;">
+        <!-- Populated via Javascript -->
+      </select>
+      <button class="hdr-btn" id="savePresetBtn" style="padding: 5px 10px; font-size: 11px;">Salvar</button>
+      <button class="hdr-btn" id="deletePresetBtn" style="padding: 5px 10px; font-size: 11px; display:none; color: var(--led-red); border-color: var(--led-red-dim);">Apagar</button>
+    </div>
+
+    <div class="voices-indicator">
+      <span class="voices-label">Voices Active</span>
+      <div class="voices-leds">
+        <div class="voice-dot" id="vl0"></div>
+        <div class="voice-dot" id="vl1"></div>
+        <div class="voice-dot" id="vl2"></div>
+        <div class="voice-dot" id="vl3"></div>
+        <div class="voice-dot" id="vl4"></div>
+        <div class="voice-dot" id="vl5"></div>
+        <div class="voice-dot" id="vl6"></div>
+        <div class="voice-dot" id="vl7"></div>
+      </div>
+    </div>
+
+    <div class="hdr-controls">
+      <span class="hdr-btn" id="polyBadge" style="cursor:default;">0 vozes</span>
+    </div>
+  </header>
+
+  <!-- ============ DRAGGABLE GRID ============ -->
+  <main class="modular-grid" id="mainGrid">
+
+    <!-- OSC A (1 parameter) -->
+    <section class="module-card" draggable="true" id="mod-oscA">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Oscillator A</h2>
+        <span class="module-subtitle">Pulse Width</span>
+      </div>
+      <div class="waveform-selector" data-group="waveA">
+        <button data-val="sine">
+          <svg viewBox="0 0 22 12"><path d="M1 6 Q5.5 1 11 6 Q16.5 11 21 6"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SIN</span>
+        </button>
+        <button data-val="triangle">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 6,1 16,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>TRI</span>
+        </button>
+        <button class="active" data-val="sawtooth">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 11,1 11,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SAW</span>
+        </button>
+        <button data-val="pulse">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 1,2 8,2 8,11 14,11 14,2 21,2"/></svg>
+          <div class="wave-indicator"></div>
+          <span>PLS</span>
+        </button>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-oscA"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-oscA"></div>
+      </div>
+      <input type="range" class="hidden-range" id="pwA" min="0.05" max="0.95" value="0.5" step="0.01">
+    </section>
+
+    <!-- OSC B (3 parameters) -->
+    <section class="module-card" draggable="true" id="mod-oscB">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Oscillator B</h2>
+        <span class="module-subtitle">Companion Generator</span>
+      </div>
+      <div class="waveform-selector" data-group="waveB">
+        <button data-val="sine">
+          <svg viewBox="0 0 22 12"><path d="M1 6 Q5.5 1 11 6 Q16.5 11 21 6"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SIN</span>
+        </button>
+        <button data-val="triangle">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 6,1 16,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>TRI</span>
+        </button>
+        <button class="active" data-val="sawtooth">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 11,1 11,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SAW</span>
+        </button>
+        <button data-val="pulse">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 1,2 8,2 8,11 14,11 14,2 21,2"/></svg>
+          <div class="wave-indicator"></div>
+          <span>PLS</span>
+        </button>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-oscB"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-oscB"></div>
+      </div>
+      <div class="toggles-group">
+        <button class="button-toggle" id="oscBLowFreq" data-flag="oscBLowFreq">Low Freq</button>
+        <button class="button-toggle" id="oscBSync" data-flag="oscBSync">Sync A↔B</button>
+      </div>
+      <input type="range" class="hidden-range" id="pwB" min="0.05" max="0.95" value="0.5" step="0.01">
+      <input type="range" class="hidden-range" id="oscBCoarse" min="-24" max="24" value="0" step="1">
+      <input type="range" class="hidden-range" id="oscBFine" min="-100" max="100" value="7" step="1">
+    </section>
+
+    <!-- MIXER (3 parameters) -->
+    <section class="module-card" draggable="true" id="mod-mixer">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Mixer</h2>
+        <span class="module-subtitle">Signal Blend</span>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-mixer"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-mixer"></div>
+      </div>
+      <input type="range" class="hidden-range" id="mixA" min="0" max="1" value="0.8" step="0.01">
+      <input type="range" class="hidden-range" id="mixB" min="0" max="1" value="0.5" step="0.01">
+      <input type="range" class="hidden-range" id="mixNoise" min="0" max="1" value="0" step="0.01">
+    </section>
+
+    <!-- GLIDE & VOICES (2 parameters + Dropdown) -->
+    <section class="module-card" draggable="true" id="mod-glide">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Glide & Unison</h2>
+        <span class="module-subtitle">Glide & Voices</span>
+      </div>
+      <div class="toggles-group">
+        <button class="button-toggle" id="glideOn" data-flag="glideOn">Glide</button>
+        <button class="button-toggle" id="unisonOn" data-flag="unisonOn">Unison</button>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-glide"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-glide"></div>
+      </div>
+      <div>
+        <label class="voices-label" style="display:block;margin-bottom:4px;">Max Polyphony (Voices)</label>
+        <select id="maxVoices" style="width:100%; background: var(--bg-input); color: var(--text-primary); border: 1.5px solid var(--border-color); border-radius: 8px; padding: 6px 12px; font-family: var(--ff-mono); font-size: 11px; cursor: pointer;">
+          <option value="1">1 Voice (Mono)</option>
+          <option value="2">2 Voices</option>
+          <option value="3">3 Voices</option>
+          <option value="4">4 Voices</option>
+          <option value="5" selected>5 Voices</option>
+          <option value="6">6 Voices</option>
+          <option value="7">7 Voices</option>
+          <option value="8">8 Voices</option>
+        </select>
+      </div>
+      <input type="range" class="hidden-range" id="glideTime" min="0" max="2" value="0.15" step="0.01">
+      <input type="range" class="hidden-range" id="unisonDetune" min="0" max="50" value="10" step="1">
+    </section>
+
+    <!-- FILTER (3 parameters) -->
+    <section class="module-card" draggable="true" id="mod-filter">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Lowpass Filter</h2>
+        <span class="module-subtitle">24dB/Oct VCF</span>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-filter"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-filter"></div>
+      </div>
+      <div>
+        <label class="voices-label" style="display:block;margin-bottom:4px;">Keyboard Tracking</label>
+        <select id="keyTrack">
+          <option value="0">Off</option>
+          <option value="0.5" selected>50%</option>
+          <option value="1">100%</option>
+        </select>
+      </div>
+      <input type="range" class="hidden-range" id="cutoff" min="80" max="12000" value="3000" step="1">
+      <input type="range" class="hidden-range" id="resonance" min="0" max="1" value="0.2" step="0.01">
+      <input type="range" class="hidden-range" id="filterEnvAmount" min="-1" max="1" value="0.5" step="0.01">
+    </section>
+
+    <!-- FILTER ENV (4 parameters) -->
+    <section class="module-card" draggable="true" id="mod-filterEnv">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Filter Envelope</h2>
+        <span class="module-subtitle">A.D.S.R Contour</span>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-filterEnv"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-filterEnv"></div>
+      </div>
+      <input type="range" class="hidden-range" id="fAttack" min="0" max="2" value="0.01" step="0.01">
+      <input type="range" class="hidden-range" id="fDecay" min="0" max="3" value="0.3" step="0.01">
+      <input type="range" class="hidden-range" id="fSustain" min="0" max="1" value="0.3" step="0.01">
+      <input type="range" class="hidden-range" id="fRelease" min="0" max="3" value="0.3" step="0.01">
+    </section>
+
+    <!-- AMP ENV (4 parameters) -->
+    <section class="module-card" draggable="true" id="mod-ampEnv">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Amp Envelope</h2>
+        <span class="module-subtitle">Amplitude ADSR</span>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-ampEnv"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-ampEnv"></div>
+      </div>
+      <input type="range" class="hidden-range" id="aAttack" min="0" max="2" value="0.01" step="0.01">
+      <input type="range" class="hidden-range" id="aDecay" min="0" max="2" value="0.1" step="0.01">
+      <input type="range" class="hidden-range" id="aSustain" min="0" max="1" value="0.7" step="0.01">
+      <input type="range" class="hidden-range" id="aRelease" min="0" max="3" value="0.3" step="0.01">
+    </section>
+
+    <!-- LFO (2 parameters) -->
+    <section class="module-card" draggable="true" id="mod-lfo">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Low Freq Osc</h2>
+        <span class="module-subtitle">2 Controls</span>
+      </div>
+      <div class="waveform-selector" data-group="lfoShape">
+        <button class="active" data-val="sine">
+          <svg viewBox="0 0 22 12"><path d="M1 6 Q5.5 1 11 6 Q16.5 11 21 6"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SIN</span>
+        </button>
+        <button data-val="triangle">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 6,1 16,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>TRI</span>
+        </button>
+        <button data-val="square">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 1,2 10,2 10,11 12,11 12,2 21,2 21,11"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SQR</span>
+        </button>
+        <button data-val="sawtooth">
+          <svg viewBox="0 0 22 12"><polyline points="1,11 11,1 11,11 21,1"/></svg>
+          <div class="wave-indicator"></div>
+          <span>SAW</span>
+        </button>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-lfo"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-lfo"></div>
+      </div>
+      <div class="toggles-group">
+        <button class="button-toggle" id="lfoToOscA" data-flag="lfoToOscA">→ Osc A</button>
+        <button class="button-toggle" id="lfoToOscB" data-flag="lfoToOscB">→ Osc B</button>
+        <button class="button-toggle" id="lfoToPW" data-flag="lfoToPW">→ PW</button>
+        <button class="button-toggle" id="lfoToFilter" data-flag="lfoToFilter">→ Filt</button>
+      </div>
+      <input type="range" class="hidden-range" id="lfoRate" min="0.05" max="20" value="5" step="0.05">
+      <input type="range" class="hidden-range" id="lfoDepth" min="0" max="1" value="0.3" step="0.01">
+    </section>
+
+    <!-- POLY-MOD (2 parameters) -->
+    <section class="module-card" draggable="true" id="mod-polymod">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Poly-Mod</h2>
+        <span class="module-subtitle">2 Controls</span>
+      </div>
+      <div class="poly-matrix-container">
+        <table class="poly-matrix">
+          <thead>
+            <tr>
+              <th>Source</th><th>Osc A Freq</th><th>Osc A PW</th><th>Filter</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Filt Env</td>
+              <td><input type="checkbox" id="polyFE_freqA"></td>
+              <td><input type="checkbox" id="polyFE_pw"></td>
+              <td><input type="checkbox" id="polyFE_filter"></td>
+            </tr>
+            <tr>
+              <td>Osc B</td>
+              <td><input type="checkbox" id="polyOB_freqA"></td>
+              <td><input type="checkbox" id="polyOB_pw"></td>
+              <td><input type="checkbox" id="polyOB_filter"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-polymod"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-polymod"></div>
+      </div>
+      <input type="range" class="hidden-range" id="polyFilterEnvAmt" min="-1" max="1" value="0" step="0.01">
+      <input type="range" class="hidden-range" id="polyOscBAmt" min="-1" max="1" value="0" step="0.01">
+    </section>
+
+    <!-- WHEEL MOD (1 parameter) -->
+    <section class="module-card" draggable="true" id="mod-wheelmod">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Wheel Mod</h2>
+        <span class="module-subtitle">Wheel Control</span>
+      </div>
+      <div class="toggles-group">
+        <button class="button-toggle on" id="wheelToPitch" data-flag="wheelToPitch">→ Pitch</button>
+        <button class="button-toggle" id="wheelToFilter" data-flag="wheelToFilter">→ Filt</button>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-wheelmod"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-wheelmod"></div>
+      </div>
+      <input type="range" class="hidden-range" id="wheelAmount" min="0" max="1" value="0.5" step="0.01">
+    </section>
+
+    <!-- MASTER CARD -->
+    <section class="module-card" draggable="true" id="mod-master">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Master</h2>
+        <span class="module-subtitle">Main Outputs</span>
+      </div>
+      <div class="concentric-layout-row">
+        <div class="concentric-canvas-container">
+          <canvas class="concentric-canvas" id="canvas-master"></canvas>
+        </div>
+        <div class="concentric-legend" id="legend-master"></div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
+        <span class="voices-label" style="font-size: 11px;">Octave Shift</span>
+        <div class="octave-selector">
+          <button class="octave-btn" id="octaveDown">−</button>
+          <span class="octave-val" id="octaveVal">0</span>
+          <button class="octave-btn" id="octaveUp">+</button>
+        </div>
+        <input type="range" class="hidden-range" id="octave" min="-3" max="3" value="0" step="1">
+      </div>
+      <input type="range" class="hidden-range" id="masterVolume" min="0" max="1" value="0.7" step="0.01">
+      <input type="range" class="hidden-range" id="masterTune" min="-100" max="100" value="0" step="1">
+    </section>
+
+    <!-- MIDI SETTINGS & LOG (NEW Dedicated Console Card) -->
+    <section class="module-card" draggable="true" id="mod-midi">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">MIDI Manager</h2>
+        <span class="module-subtitle">CC Map & Monitor</span>
+      </div>
+
+      <!-- Relocated Connection panel -->
+      <div class="midi-connection-panel" style="display:flex; flex-direction:column; gap:8px; background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <button class="hdr-btn" id="connectBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Conectar MIDI</button>
+          <button class="hdr-btn" id="testBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Test C4</button>
+        </div>
+        <select id="deviceSelect" style="width:100%;"><option>Aguardando...</option></select>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+          <div class="midi-dot" id="dot"></div>
+          <span class="midi-text" id="statusText" style="font-size:10px; color: var(--text-primary);">MIDI Desconectado</span>
+        </div>
+      </div>
+
+      <div class="midi-bank-section" style="margin-top: 10px;">
+        <div class="midi-bank-header">
+          <button id="bankA" class="active" data-bank="A">Bank A</button>
+          <button id="bankB" data-bank="B">Bank B</button>
+        </div>
+        <div class="cc-list" id="ccList"></div>
+      </div>
+
+      <div class="log-collapsible" style="margin-top: 4px;">
+        <button class="log-toggle-btn" id="logToggleBtn">
+          <span>▶</span> MIDI Monitor Log
+        </button>
+        <div class="log-box" id="log">Aguardando conexões…</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ DRAWER KEYBOARD ============ -->
+  <section class="keyboard-section">
+    <button class="kb-hdr-btn" id="kbToggleBtn">▲ KEYBOARD</button>
+    <div class="kb-drawer" id="kbDrawer">
+      <div class="keyboard" id="keyboard"></div>
+      <div class="kb-legend">KEYS: A W S E D F T G Y H U J K (QWERTY Keyboard Map)</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// Global tracking of dial instances to allow program preset loading
+window.dialInstances = [];
+
+// ================================================================
+//  PERSISTENCE SYSTEM (Active State & Layout Autosave)
+// ================================================================
+function saveActiveState() {
+  const select = document.getElementById("presetSelect");
+  const state = {
+    P: { ...P },
+    octaveShift: octaveShift,
+    activeBank: typeof activeBank !== "undefined" ? activeBank : "A",
+    selectedPreset: select ? select.value : null
+  };
+  try {
+    localStorage.setItem("prophet_concentric_active_state", JSON.stringify(state));
+  } catch(e) {
+    console.warn("Could not save active state to localStorage", e);
+  }
+}
+
+function saveLayoutState() {
+  const grid = document.getElementById('mainGrid');
+  if (!grid) return;
+  const cards = Array.from(grid.querySelectorAll('.module-card'));
+  const order = cards.map(c => c.id);
+  try {
+    localStorage.setItem("prophet_concentric_layout_order", JSON.stringify(order));
+  } catch(e) {
+    console.warn("Could not save layout order to localStorage", e);
+  }
+}
+
+function restoreLayoutState() {
+  try {
+    const stored = localStorage.getItem("prophet_concentric_layout_order");
+    if (stored) {
+      const order = JSON.parse(stored);
+      const grid = document.getElementById('mainGrid');
+      order.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.parentNode === grid) {
+          grid.appendChild(el);
+        }
+      });
+    }
+  } catch(e) {
+    console.warn("Could not restore layout order", e);
+  }
+}
+
+// ================================================================
+//  UI LABELS & FORMATTERS (Shared with Canvas Renderer)
+// ================================================================
+const formatters = {
+  pwA: { label: 'PW A', fmt: v => Math.round(v * 100) + "%" },
+  pwB: { label: 'PW B', fmt: v => Math.round(v * 100) + "%" },
+  oscBCoarse: { label: 'Coarse', fmt: v => Math.round(v) + " st" },
+  oscBFine: { label: 'Fine', fmt: v => Math.round(v) + " ct" },
+  mixA: { label: 'Osc A', fmt: v => Math.round(v * 100) + "%" },
+  mixB: { label: 'Osc B', fmt: v => Math.round(v * 100) + "%" },
+  mixNoise: { label: 'Noise', fmt: v => Math.round(v * 100) + "%" },
+  glideTime: { label: 'Glide', fmt: v => v.toFixed(2) + "s" },
+  unisonDetune: { label: 'Detune', fmt: v => Math.round(v) + " ct" },
+  cutoff: { label: 'Cutoff', fmt: v => Math.round(v) + " Hz" },
+  resonance: { label: 'Reson.', fmt: v => v.toFixed(2) },
+  filterEnvAmount: { label: 'Env Amt', fmt: v => v.toFixed(2) },
+  fAttack: { label: 'Attack', fmt: v => v.toFixed(2) + "s" },
+  fDecay: { label: 'Decay', fmt: v => v.toFixed(2) + "s" },
+  fSustain: { label: 'Sustain', fmt: v => v.toFixed(2) },
+  fRelease: { label: 'Release', fmt: v => v.toFixed(2) + "s" },
+  aAttack: { label: 'Attack', fmt: v => v.toFixed(2) + "s" },
+  aDecay: { label: 'Decay', fmt: v => v.toFixed(2) + "s" },
+  aSustain: { label: 'Sustain', fmt: v => v.toFixed(2) },
+  aRelease: { label: 'Release', fmt: v => v.toFixed(2) + "s" },
+  lfoRate: { label: 'Rate', fmt: v => v.toFixed(1) + " Hz" },
+  lfoDepth: { label: 'Depth', fmt: v => v.toFixed(2) },
+  polyFilterEnvAmt: { label: 'Filt Env', fmt: v => v.toFixed(2) },
+  polyOscBAmt: { label: 'Osc B', fmt: v => v.toFixed(2) },
+  wheelAmount: { label: 'Amount', fmt: v => v.toFixed(2) },
+  masterVolume: { label: 'Volume', fmt: v => Math.round(v * 100) + "%" },
+  masterTune: { label: 'Tune', fmt: v => Math.round(v) + " ct" }
+};
+
+// Colors from the user reference image (light green/yellow gradient)
+const ringColors = [
+  '#dbe9a6', // Outermost
+  '#9ecf79',
+  '#4bb05c',
+  '#09633e'  // Innermost
+];
+
+// ================================================================
+//  CONCENTRIC ARC SLIDERS ENGINE
+// ================================================================
+class ConcentricGaugeDial {
+  constructor(canvasId, paramIds, legendId) {
+    this.canvas = document.getElementById(canvasId);
+    this.legendContainer = document.getElementById(legendId);
+    if (!this.canvas) return;
+
+    this.ctx = this.canvas.getContext('2d');
+    this.paramIds = paramIds;
+    this.inputs = paramIds.map(id => document.getElementById(id));
+    this.numRings = paramIds.length;
+
+    this.centerX = 75;
+    this.centerY = 75;
+    this.thickness = 7;
+    
+    // Rings radii spacing (starts outermost)
+    this.radii = [];
+    for (let i = 0; i < this.numRings; i++) {
+      this.radii.push(63 - i * 11);
+    }
+
+    this.activeRingIndex = -1;
+    this.isDragging = false;
+
+    // High DPI Support
+    const rect = this.canvas.getBoundingClientRect();
+    this.canvas.width = rect.width * window.devicePixelRatio;
+    this.canvas.height = rect.height * window.devicePixelRatio;
+    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    this.buildLegend();
+    this.initEvents();
+    this.draw();
+
+    this.inputs.forEach((input, index) => {
+      if (input) {
+        input.addEventListener('input', () => {
+          this.draw();
+          this.updateLegendRow(index);
+        });
+      }
+    });
+
+    // Register instance globally for preset loading
+    window.dialInstances.push(this);
+  }
+
+  getNormValue(index) {
+    const input = this.inputs[index];
+    if (!input) return 0;
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const val = parseFloat(input.value);
+    return (val - min) / (max - min);
+  }
+
+  setNormValue(index, norm) {
+    const input = this.inputs[index];
+    if (!input) return;
+    const min = parseFloat(input.min);
+    const max = parseFloat(input.max);
+    const step = parseFloat(input.step) || 0.01;
+    let val = min + norm * (max - min);
+    if (step > 0) {
+      val = Math.round(val / step) * step;
+    }
+    input.value = Math.max(min, Math.min(max, val));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  draw() {
+    const ctx = this.ctx;
+    const cx = this.centerX;
+    const cy = this.centerY;
+    ctx.clearRect(0, 0, 150, 150);
+
+    // Speedometer style 270 degrees arc range starting top-left (-225 degrees)
+    const startAngle = -Math.PI * 1.25;
+    const maxSweepAngle = Math.PI * 1.5; // 270 deg sweep
+
+    for (let i = 0; i < this.numRings; i++) {
+      const radius = this.radii[i];
+      const norm = this.getNormValue(i);
+      const color = ringColors[i % ringColors.length];
+
+      // Draw faint background track ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, startAngle, startAngle + maxSweepAngle);
+      ctx.strokeStyle = '#202820'; // Sleek dark green track
+      ctx.lineWidth = this.thickness;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      // Draw active filled arc
+      if (norm > 0) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, startAngle, startAngle + maxSweepAngle * norm);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = this.thickness;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+      }
+    }
+  }
+
+  buildLegend() {
+    if (!this.legendContainer) return;
+    this.legendContainer.innerHTML = '';
+
+    this.paramIds.forEach((paramId, index) => {
+      const color = ringColors[index % ringColors.length];
+      const conf = formatters[paramId];
+
+      const row = document.createElement('div');
+      row.className = 'legend-row';
+      row.id = `row-${paramId}`;
+
+      row.innerHTML = `
+        <div class="legend-left">
+          <div class="color-swatch" style="background-color: ${color}"></div>
+          <span class="legend-name">${conf.label}</span>
+        </div>
+        <div class="legend-right">
+          <span class="legend-value" id="val-${paramId}">--</span>
+          <button class="learn-btn" data-param="${paramId}">LRN</button>
+        </div>
+      `;
+
+      // Wheel scroll adjustments over parameter names + values
+      row.addEventListener('wheel', e => {
+        const input = this.inputs[index];
+        if (!input) return;
+        e.preventDefault(); // Stop body scrolling
+
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        const step = parseFloat(input.step) || 0.01;
+
+        // Wheel up raises values, wheel down lowers values
+        const direction = e.deltaY < 0 ? 1 : -1;
+        let newVal = parseFloat(input.value) + direction * step;
+        input.value = Math.max(min, Math.min(max, newVal));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }, { passive: false });
+
+      this.legendContainer.appendChild(row);
+      this.updateLegendRow(index);
+    });
+  }
+
+  updateLegendRow(index) {
+    const paramId = this.paramIds[index];
+    const input = this.inputs[index];
+    const valEl = document.getElementById(`val-${paramId}`);
+    if (valEl && input) {
+      valEl.textContent = formatters[paramId].fmt(parseFloat(input.value));
+    }
+  }
+
+  // Radial touch selection based on distance from center
+  getRingIndexAt(x, y) {
+    const dx = x - this.centerX;
+    const dy = y - this.centerY;
+    const distance = Math.sqrt(dx*dx + dy*dy);
+
+    let closestIndex = -1;
+    let minDiff = Infinity;
+
+    for (let i = 0; i < this.numRings; i++) {
+      const diff = Math.abs(distance - this.radii[i]);
+      if (diff < minDiff && diff < 8) { // Click tolerance window
+        minDiff = diff;
+        closestIndex = i;
+      }
+    }
+    return closestIndex;
+  }
+
+  initEvents() {
+    let startY = 0;
+    let startVal = 0;
+
+    const handleStart = (clientX, clientY) => {
+      const rect = this.canvas.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      const ringIdx = this.getRingIndexAt(x, y);
+      if (ringIdx !== -1) {
+        this.activeRingIndex = ringIdx;
+        this.isDragging = true;
+        startY = clientY;
+        startVal = this.getNormValue(ringIdx);
+
+        // Highlight active parameter in UI legend list
+        document.querySelectorAll('.legend-row').forEach(row => row.classList.remove('active-row'));
+        const row = document.getElementById('row-' + this.paramIds[ringIdx]);
+        if (row) row.classList.add('active-row');
+      }
+    };
+
+    const handleMove = (clientY) => {
+      if (!this.isDragging || this.activeRingIndex === -1) return;
+      const deltaY = startY - clientY;
+      const deltaNorm = deltaY * 0.0065; // Precision drag sensitivity multiplier
+      const finalNorm = Math.max(0, Math.min(1, startVal + deltaNorm));
+      this.setNormValue(this.activeRingIndex, finalNorm);
+    };
+
+    const handleEnd = () => {
+      this.isDragging = false;
+      this.activeRingIndex = -1;
+      document.querySelectorAll('.legend-row').forEach(row => row.classList.remove('active-row'));
+    };
+
+    this.canvas.addEventListener('mousedown', e => {
+      handleStart(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+
+    window.addEventListener('mousemove', e => {
+      if (this.isDragging) {
+        handleMove(e.clientY);
+        e.preventDefault();
+      }
+    });
+
+    window.addEventListener('mouseup', handleEnd);
+
+    // Mobile/tablet touch
+    this.canvas.addEventListener('touchstart', e => {
+      handleStart(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('touchmove', e => {
+      if (this.isDragging) {
+        handleMove(e.touches[0].clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    window.addEventListener('touchend', handleEnd);
+  }
+}
+
+// Instantiate Multi-Ring Dials once DOM loads
+window.addEventListener('DOMContentLoaded', () => {
+  // Restore Panel Grid Layout Order first to avoid layout shift after canvases are drawn
+  restoreLayoutState();
+
+  new ConcentricGaugeDial('canvas-oscA', ['pwA'], 'legend-oscA');
+  new ConcentricGaugeDial('canvas-oscB', ['pwB', 'oscBCoarse', 'oscBFine'], 'legend-oscB');
+  new ConcentricGaugeDial('canvas-mixer', ['mixA', 'mixB', 'mixNoise'], 'legend-mixer');
+  new ConcentricGaugeDial('canvas-glide', ['glideTime', 'unisonDetune'], 'legend-glide');
+  new ConcentricGaugeDial('canvas-filter', ['cutoff', 'resonance', 'filterEnvAmount'], 'legend-filter');
+  new ConcentricGaugeDial('canvas-filterEnv', ['fAttack', 'fDecay', 'fSustain', 'fRelease'], 'legend-filterEnv');
+  new ConcentricGaugeDial('canvas-ampEnv', ['aAttack', 'aDecay', 'aSustain', 'aRelease'], 'legend-ampEnv');
+  new ConcentricGaugeDial('canvas-lfo', ['lfoRate', 'lfoDepth'], 'legend-lfo');
+  new ConcentricGaugeDial('canvas-polymod', ['polyFilterEnvAmt', 'polyOscBAmt'], 'legend-polymod');
+  new ConcentricGaugeDial('canvas-wheelmod', ['wheelAmount'], 'legend-wheelmod');
+  new ConcentricGaugeDial('canvas-master', ['masterVolume', 'masterTune'], 'legend-master');
+  
+  // Set up Preset system once DOM and dials are fully instantiated
+  initPresetsSystem();
+});
+
+
+// ================================================================
+//  GRID DRAG AND DROP REORDER SYSTEM
+// ================================================================
+(function initDragAndDrop() {
+  const grid = document.getElementById('mainGrid');
+  let draggedItem = null;
+
+  grid.addEventListener('dragstart', e => {
+    const card = e.target.closest('.module-card');
+    if (!card) return;
+    draggedItem = card;
+    setTimeout(() => {
+      card.classList.add('dragging');
+    }, 0);
+  });
+
+  grid.addEventListener('dragend', e => {
+    const card = e.target.closest('.module-card');
+    if (card) {
+      card.classList.remove('dragging');
+    }
+    draggedItem = null;
+    document.querySelectorAll('.module-card').forEach(c => c.classList.remove('drag-over'));
+  });
+
+  grid.addEventListener('dragover', e => {
+    e.preventDefault();
+    const targetCard = e.target.closest('.module-card');
+    if (!targetCard || targetCard === draggedItem) return;
+
+    targetCard.classList.add('drag-over');
+  });
+
+  grid.addEventListener('dragleave', e => {
+    const targetCard = e.target.closest('.module-card');
+    if (targetCard) {
+      targetCard.classList.remove('drag-over');
+    }
+  });
+
+  grid.addEventListener('drop', e => {
+    e.preventDefault();
+    const targetCard = e.target.closest('.module-card');
+    if (!targetCard || targetCard === draggedItem) return;
+
+    targetCard.classList.remove('drag-over');
+
+    const children = Array.from(grid.children);
+    const draggedIndex = children.indexOf(draggedItem);
+    const targetIndex = children.indexOf(targetCard);
+
+    if (draggedIndex < targetIndex) {
+      grid.insertBefore(draggedItem, targetCard.nextSibling);
+    } else {
+      grid.insertBefore(draggedItem, targetCard);
+    }
+    
+    // Save panel layout order
+    saveLayoutState();
+  });
+})();
+
+// ================================================================
+//  UI LAYOUT TOGGLES & RESTORATION
+// ================================================================
+document.getElementById('kbToggleBtn').addEventListener('click', e => {
+  const dr = document.getElementById('kbDrawer');
+  dr.classList.toggle('open');
+  const isOpen = dr.classList.contains('open');
+  e.target.textContent = isOpen ? '▼ KEYBOARD' : '▲ KEYBOARD';
+  try {
+    localStorage.setItem("prophet_concentric_kbd_open", isOpen);
+  } catch(err) {}
+});
+
+document.getElementById('logToggleBtn').addEventListener('click', e => {
+  const box = document.getElementById('log');
+  box.classList.toggle('open');
+  const isOpen = box.classList.contains('open');
+  e.target.querySelector('span').textContent = isOpen ? '▼' : '▶';
+  try {
+    localStorage.setItem("prophet_concentric_log_open", isOpen);
+  } catch(err) {}
+});
+
+// Restore drawer states
+try {
+  const kbdOpen = localStorage.getItem("prophet_concentric_kbd_open") === "true";
+  const dr = document.getElementById('kbDrawer');
+  const kbBtn = document.getElementById('kbToggleBtn');
+  if (kbdOpen && dr && kbBtn) {
+    dr.classList.add('open');
+    kbBtn.textContent = '▼ KEYBOARD';
+  }
+
+  const logOpen = localStorage.getItem("prophet_concentric_log_open") === "true";
+  const box = document.getElementById('log');
+  const logBtn = document.getElementById('logToggleBtn');
+  if (logOpen && box && logBtn) {
+    box.classList.add('open');
+    logBtn.querySelector('span').textContent = '▼';
+  }
+} catch(e) {}
+
+document.getElementById('octaveUp').addEventListener('click', () => {
+  const input = document.getElementById('octave');
+  input.value = Math.min(3, parseInt(input.value) + 1);
+  input.dispatchEvent(new Event('input'));
+});
+document.getElementById('octaveDown').addEventListener('click', () => {
+  const input = document.getElementById('octave');
+  input.value = Math.max(-3, parseInt(input.value) - 1);
+  input.dispatchEvent(new Event('input'));
+});
+
+
+// ================================================================
+//  ÁUDIO: contexto e utilitários
+// ================================================================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioCtx();
+const masterGain = audioCtx.createGain();
+masterGain.gain.value = 0.7;
+masterGain.connect(audioCtx.destination);
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function midiToFreq(note) { return 440 * Math.pow(2, (note - 69) / 12); }
+
+// ruído branco compartilhado
+const noiseBuffer = (() => {
+  const len = audioCtx.sampleRate * 2;
+  const buf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+})();
+
+// LFO global compartilhado por todas as vozes
+const lfoOsc = audioCtx.createOscillator();
+lfoOsc.type = "sine";
+lfoOsc.frequency.value = 5;
+lfoOsc.start();
+
+// ============ ESTADO DOS PARÂMETROS ============
+const P = {
+  waveA: "sawtooth", pwA: 0.5,
+  waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 7, oscBLowFreq: false, oscBSync: false,
+  mixA: 0.8, mixB: 0.5, mixNoise: 0,
+  cutoff: 3000, resonance: 0.2, keyTrack: 0.5,
+  filterEnvAmount: 0.5, fAttack: 0.01, fDecay: 0.3, fSustain: 0.3, fRelease: 0.3,
+  aAttack: 0.01, aDecay: 0.1, aSustain: 0.7, aRelease: 0.3,
+  lfoShape: "sine", lfoRate: 5, lfoDepth: 0.3,
+  lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+  polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+  polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+  polyFilterEnvAmt: 0, polyOscBAmt: 0,
+  wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.5,
+  glideOn: false, glideTime: 0.15,
+  unisonOn: false, unisonDetune: 10,
+  maxVoices: 5,
+  masterVolume: 0.7, masterTune: 0
+};
+
+const RANGE = {
+  lfoPitchCents: 100, lfoFilterHz: 4000, lfoPWFrac: 0.4,
+  filterEnvHz: 8000,
+  polyFreqCents: 1200, polyPWFrac: 0.4, polyFilterHz: 6000,
+  wheelPitchCents: 100, wheelFilterHz: 3000,
+  pitchBendCents: 200
+};
+
+let octaveShift = 0;
+let lastFreq = null;
+let lastFreqB = null;
+let modWheelValue = 0;
+let pitchBendCents = 0;
+
+// ============ MOTOR DE VOZES ============
+const voices = new Map();
+let voiceOrder = [];
+let voiceCounter = 0;
+let unisonVoiceIds = [];
+
+function buildOscStage(freq, type, pw) {
+  if (type === "pulse") {
+    const saw1 = audioCtx.createOscillator(); saw1.type = "sawtooth"; saw1.frequency.value = freq;
+    const saw2 = audioCtx.createOscillator(); saw2.type = "sawtooth"; saw2.frequency.value = freq;
+    const inv = audioCtx.createGain(); inv.gain.value = -1;
+    const delay = audioCtx.createDelay(1.0);
+    const period = 1 / Math.max(freq, 1);
+    delay.delayTime.value = clamp(pw, 0.02, 0.98) * period;
+    const sum = audioCtx.createGain(); sum.gain.value = 0.5;
+    saw1.connect(sum);
+    saw2.connect(inv); inv.connect(delay); delay.connect(sum);
+    saw1.start(); saw2.start();
+    return { oscillators: [saw1, saw2], detuneParams: [saw1.detune, saw2.detune], output: sum, pwDelay: delay, period };
+  }
+  const osc = audioCtx.createOscillator();
+  osc.type = type; osc.frequency.value = freq;
+  const g = audioCtx.createGain(); g.gain.value = 1;
+  osc.connect(g); osc.start();
+  return { oscillators: [osc], detuneParams: [osc.detune], output: g, pwDelay: null, period: 1 / Math.max(freq, 1) };
+}
+
+function createVoice(note, velocity, unisonDetuneCents) {
+  const now = audioCtx.currentTime;
+  const extraDetune = unisonDetuneCents || 0;
+  const targetFreqA = midiToFreq(note + octaveShift * 12) * Math.pow(2, (P.masterTune + extraDetune) / 1200);
+  const startFreqA = (P.glideOn && lastFreq != null) ? lastFreq : targetFreqA;
+  lastFreq = targetFreqA;
+
+  let targetFreqB;
+  if (P.oscBLowFreq) {
+    targetFreqB = clamp(Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12) * 2, 0.05, 30);
+  } else {
+    targetFreqB = targetFreqA * Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12);
+    if (P.oscBSync) {
+      const ratio = Math.max(1, Math.round(targetFreqB / targetFreqA));
+      targetFreqB = targetFreqA * ratio;
+    }
+  }
+  const startFreqB = (P.glideOn && !P.oscBLowFreq && lastFreqB != null) ? lastFreqB : targetFreqB;
+  if (!P.oscBLowFreq) lastFreqB = targetFreqB;
+
+  const oscA = buildOscStage(startFreqA, P.waveA, P.pwA);
+  const oscB = buildOscStage(startFreqB, P.waveB, P.pwB);
+
+  if (P.glideOn && P.glideTime > 0.001) {
+    oscA.oscillators.forEach(o => { o.frequency.setValueAtTime(startFreqA, now); o.frequency.exponentialRampToValueAtTime(Math.max(targetFreqA, 0.01), now + P.glideTime); });
+    if (!P.oscBLowFreq) oscB.oscillators.forEach(o => { o.frequency.setValueAtTime(startFreqB, now); o.frequency.exponentialRampToValueAtTime(Math.max(targetFreqB, 0.01), now + P.glideTime); });
+  } else {
+    oscA.oscillators.forEach(o => o.frequency.value = targetFreqA);
+    if (!P.oscBLowFreq) oscB.oscillators.forEach(o => o.frequency.value = targetFreqB);
+  }
+  applyDetuneToOsc(oscA, pitchBendCents);
+  applyDetuneToOsc(oscB, P.oscBLowFreq ? 0 : pitchBendCents);
+
+  const noiseSrc = audioCtx.createBufferSource();
+  noiseSrc.buffer = noiseBuffer; noiseSrc.loop = true; noiseSrc.start();
+
+  const mixA = audioCtx.createGain(); mixA.gain.value = P.mixA;
+  const mixB = audioCtx.createGain(); mixB.gain.value = P.oscBLowFreq ? 0 : P.mixB;
+  const mixN = audioCtx.createGain(); mixN.gain.value = P.mixNoise;
+  oscA.output.connect(mixA);
+  oscB.output.connect(mixB);
+  noiseSrc.connect(mixN);
+
+  const keyTrackMul = Math.pow(2, P.keyTrack * (note - 60) / 12);
+  const baseCutoff = clamp(P.cutoff * keyTrackMul, 20, 18000);
+  const q = 0.5 + P.resonance * 17.5;
+  const filterStages = [];
+  for (let i = 0; i < 4; i++) {
+    const f = audioCtx.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.value = baseCutoff; f.Q.value = q;
+    filterStages.push(f);
+  }
+  mixA.connect(filterStages[0]); mixB.connect(filterStages[0]); mixN.connect(filterStages[0]);
+  filterStages[0].connect(filterStages[1]);
+  filterStages[1].connect(filterStages[2]);
+  filterStages[2].connect(filterStages[3]);
+
+  const envConst = audioCtx.createConstantSource(); envConst.offset.value = 1; envConst.start();
+  const filterEnvGain = audioCtx.createGain(); filterEnvGain.gain.value = 0;
+  envConst.connect(filterEnvGain);
+  scheduleADSR(filterEnvGain.gain, 1, P.fAttack, P.fDecay, P.fSustain, now);
+
+  const filterEnvToCutoff = audioCtx.createGain();
+  filterEnvToCutoff.gain.value = P.filterEnvAmount * RANGE.filterEnvHz;
+  filterEnvGain.connect(filterEnvToCutoff);
+  filterStages.forEach(f => filterEnvToCutoff.connect(f.frequency));
+
+  const ampEnv = audioCtx.createGain(); ampEnv.gain.value = 0;
+  const vel = Math.max(velocity, 1) / 127;
+  scheduleADSR(ampEnv.gain, vel, P.aAttack, P.aDecay, P.aSustain, now);
+  filterStages[3].connect(ampEnv);
+  ampEnv.connect(masterGain);
+
+  // LFO
+  const lfoNodes = {};
+  if (P.lfoToOscA) {
+    lfoNodes.pitchA = audioCtx.createGain();
+    lfoNodes.pitchA.gain.value = P.lfoDepth * RANGE.lfoPitchCents;
+    lfoOsc.connect(lfoNodes.pitchA);
+    oscA.detuneParams.forEach(dp => lfoNodes.pitchA.connect(dp));
+  }
+  if (P.lfoToOscB && !P.oscBLowFreq) {
+    lfoNodes.pitchB = audioCtx.createGain();
+    lfoNodes.pitchB.gain.value = P.lfoDepth * RANGE.lfoPitchCents;
+    lfoOsc.connect(lfoNodes.pitchB);
+    oscB.detuneParams.forEach(dp => lfoNodes.pitchB.connect(dp));
+  }
+  if (P.lfoToPW) {
+    if (oscA.pwDelay) {
+      lfoNodes.pwA = audioCtx.createGain();
+      lfoNodes.pwA.gain.value = P.lfoDepth * RANGE.lfoPWFrac * v.oscA.period;
+      lfoOsc.connect(lfoNodes.pwA); lfoNodes.pwA.connect(oscA.pwDelay.delayTime);
+    }
+    if (oscB.pwDelay) {
+      lfoNodes.pwB = audioCtx.createGain();
+      lfoNodes.pwB.gain.value = P.lfoDepth * RANGE.lfoPWFrac * v.oscB.period;
+      lfoOsc.connect(lfoNodes.pwB); lfoNodes.pwB.connect(oscB.pwDelay.delayTime);
+    }
+  }
+  if (P.lfoToFilter) {
+    lfoNodes.filter = audioCtx.createGain();
+    lfoNodes.filter.gain.value = P.lfoDepth * RANGE.lfoFilterHz;
+    lfoOsc.connect(lfoNodes.filter);
+    filterStages.forEach(f => lfoNodes.filter.connect(f.frequency));
+  }
+
+  // Poly-Mod
+  const polyNodes = {};
+  if (P.polyFE_freqA) {
+    polyNodes.feFreqA = audioCtx.createGain();
+    polyNodes.feFreqA.gain.value = P.polyFilterEnvAmt * RANGE.polyFreqCents;
+    filterEnvGain.connect(polyNodes.feFreqA);
+    oscA.detuneParams.forEach(dp => polyNodes.feFreqA.connect(dp));
+  }
+  if (P.polyFE_pw && oscA.pwDelay) {
+    polyNodes.fePW = audioCtx.createGain();
+    polyNodes.fePW.gain.value = P.polyFilterEnvAmt * RANGE.polyPWFrac * oscA.period;
+    filterEnvGain.connect(polyNodes.fePW); polyNodes.fePW.connect(oscA.pwDelay.delayTime);
+  }
+  if (P.polyFE_filter) {
+    polyNodes.feFilter = audioCtx.createGain();
+    polyNodes.feFilter.gain.value = P.polyFilterEnvAmt * RANGE.polyFilterHz;
+    filterEnvGain.connect(polyNodes.feFilter);
+    filterStages.forEach(f => polyNodes.feFilter.connect(f.frequency));
+  }
+  if (P.polyOB_freqA) {
+    polyNodes.obFreqA = audioCtx.createGain();
+    polyNodes.obFreqA.gain.value = P.polyOscBAmt * RANGE.polyFreqCents;
+    oscB.output.connect(polyNodes.obFreqA);
+    oscA.detuneParams.forEach(dp => polyNodes.obFreqA.connect(dp));
+  }
+  if (P.polyOB_pw && oscA.pwDelay) {
+    polyNodes.obPW = audioCtx.createGain();
+    polyNodes.obPW.gain.value = P.polyOscBAmt * RANGE.polyPWFrac * oscA.period;
+    oscB.output.connect(polyNodes.obPW); polyNodes.obPW.connect(oscA.pwDelay.delayTime);
+  }
+  if (P.polyOB_filter) {
+    polyNodes.obFilter = audioCtx.createGain();
+    polyNodes.obFilter.gain.value = P.polyOscBAmt * RANGE.polyFilterHz;
+    oscB.output.connect(polyNodes.obFilter);
+    filterStages.forEach(f => polyNodes.obFilter.connect(f.frequency));
+  }
+
+  // Wheel-Mod
+  const wheelNodes = {};
+  const wheelFactor = P.wheelAmount * (modWheelValue / 127);
+  if (P.wheelToPitch) {
+    wheelNodes.pitch = audioCtx.createGain();
+    wheelNodes.pitch.gain.value = wheelFactor * RANGE.wheelPitchCents;
+    lfoOsc.connect(wheelNodes.pitch);
+    oscA.detuneParams.forEach(dp => wheelNodes.pitch.connect(dp));
+    if (!P.oscBLowFreq) oscB.detuneParams.forEach(dp => wheelNodes.pitch.connect(dp));
+  }
+  if (P.wheelToFilter) {
+    wheelNodes.filter = audioCtx.createGain();
+    wheelNodes.filter.gain.value = wheelFactor * RANGE.wheelFilterHz;
+    lfoOsc.connect(wheelNodes.filter);
+    filterStages.forEach(f => wheelNodes.filter.connect(f.frequency));
+  }
+
+  const id = ++voiceCounter;
+  const voice = {
+    id, note, oscA, oscB, noiseSrc, mixA, mixB, mixN, filterStages,
+    filterEnvGain, filterEnvToCutoff, envConst, ampEnv, lfoNodes, polyNodes, wheelNodes, releasing: false
+  };
+  voices.set(id, voice);
+  voiceOrder.push(id);
+  updatePolyBadge();
+  return voice;
+}
+
+function applyDetuneToOsc(stage, cents) {
+  stage.detuneParams.forEach(dp => dp.setValueAtTime(cents, audioCtx.currentTime));
+}
+
+function scheduleADSR(audioParam, peak, attack, decay, sustain, now) {
+  audioParam.cancelScheduledValues(now);
+  audioParam.setValueAtTime(audioParam.value, now);
+  audioParam.linearRampToValueAtTime(peak, now + Math.max(attack, 0.005));
+  audioParam.linearRampToValueAtTime(peak * sustain, now + Math.max(attack, 0.005) + Math.max(decay, 0.005));
+}
+
+function releaseVoice(voice, fast = false) {
+  if (voice.releasing) return;
+  voice.releasing = true;
+  
+  // Remove from active voiceOrder immediately so it doesn't count towards the polyphony limit
+  voiceOrder = voiceOrder.filter(v => v !== voice.id);
+  updatePolyBadge(); // Update UI badges instantly
+
+  const now = audioCtx.currentTime;
+  const relA = fast ? 0.005 : Math.max(P.aRelease, 0.01);
+  const relF = fast ? 0.005 : Math.max(P.fRelease, 0.01);
+
+  voice.ampEnv.gain.cancelScheduledValues(now);
+  voice.ampEnv.gain.setValueAtTime(voice.ampEnv.gain.value, now);
+  voice.ampEnv.gain.linearRampToValueAtTime(0, now + relA);
+
+  voice.filterEnvGain.gain.cancelScheduledValues(now);
+  voice.filterEnvGain.gain.setValueAtTime(voice.filterEnvGain.gain.value, now);
+  voice.filterEnvGain.gain.linearRampToValueAtTime(0, now + relF);
+
+  const stopAt = now + Math.max(relA, relF) + 0.05;
+  const allOscs = [...voice.oscA.oscillators, ...voice.oscB.oscillators];
+  allOscs.forEach(o => { try { o.stop(stopAt); } catch (e) {} });
+  try { voice.noiseSrc.stop(stopAt); } catch (e) {}
+  try { voice.envConst.stop(stopAt); } catch (e) {}
+
+  setTimeout(() => {
+    voices.delete(voice.id);
+    cleanupVoiceNodes(voice);
+    updatePolyBadge();
+  }, (stopAt - now) * 1000 + 60);
+}
+
+function cleanupVoiceNodes(voice) {
+  const nodes = [
+    ...voice.oscA.oscillators, voice.oscA.output, voice.oscA.pwDelay,
+    ...voice.oscB.oscillators, voice.oscB.output, voice.oscB.pwDelay,
+    voice.noiseSrc, voice.mixA, voice.mixB, voice.mixN,
+    ...voice.filterStages, voice.filterEnvGain, voice.filterEnvToCutoff, voice.envConst, voice.ampEnv,
+    ...Object.values(voice.lfoNodes || {}),
+    ...Object.values(voice.polyNodes || {}),
+    ...Object.values(voice.wheelNodes || {})
+  ];
+  nodes.forEach(n => { if (n) { try { n.disconnect(); } catch (e) {} } });
+}
+
+function updatePolyBadge() {
+  // Only count voices that are currently active (not in release phase)
+  let activeCount = 0;
+  voices.forEach(v => {
+    if (!v.releasing) activeCount++;
+  });
+
+  document.getElementById("polyBadge").textContent = activeCount + " vozes";
+  
+  // LED indicators on panel
+  for (let i = 0; i < 8; i++) {
+    const led = document.getElementById('vl' + i);
+    if (led) led.classList.toggle('on', i < activeCount);
+  }
+  
+  // LCD program text
+  const progLcd = document.getElementById('progLcd');
+  if (progLcd) {
+    progLcd.textContent = activeCount > 0 ? String(activeCount).padStart(2, '0') + ' VCE' : '01 VCE';
+  }
+}
+
+// ---- Note on/off ----
+const noteToVoiceIds = new Map();
+
+function noteOn(note, velocity) {
+  if (audioCtx.state === "suspended") audioCtx.resume();
+
+  if (P.unisonOn) {
+    unisonVoiceIds.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, true); });
+    unisonVoiceIds = [];
+    const n = clamp(P.maxVoices, 1, 8);
+    const spread = P.unisonDetune;
+    for (let i = 0; i < n; i++) {
+      const detune = n === 1 ? 0 : (i / (n - 1) - 0.5) * 2 * spread;
+      const v = createVoice(note, velocity, detune);
+      unisonVoiceIds.push(v.id);
+    }
+    noteToVoiceIds.set(note, unisonVoiceIds.slice());
+    return;
+  }
+
+  // Steal voice instantly (fast cutoff) when exceeding maxVoices limit
+  while (voiceOrder.length >= clamp(P.maxVoices, 1, 8)) {
+    const oldestId = voiceOrder.shift();
+    const oldest = voices.get(oldestId);
+    if (oldest) releaseVoice(oldest, true); // Fast release to avoid polyphonic overlap
+  }
+  const v = createVoice(note, velocity, 0);
+  const list = noteToVoiceIds.get(note) || [];
+  list.push(v.id);
+  noteToVoiceIds.set(note, list);
+}
+
+function noteOff(note) {
+  const list = noteToVoiceIds.get(note);
+  if (!list) return;
+  list.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, false); });
+  noteToVoiceIds.delete(note);
+  if (P.unisonOn) unisonVoiceIds = unisonVoiceIds.filter(id => !list.includes(id));
+}
+
+function allNotesOff() {
+  voices.forEach(v => releaseVoice(v, true));
+  noteToVoiceIds.clear();
+  unisonVoiceIds = [];
+}
+
+// ---- Live param update ----
+function liveUpdate(key) {
+  voices.forEach(v => {
+    if (key === "cutoff" || key === "resonance") {
+      const note = v.note;
+      const keyTrackMul = Math.pow(2, P.keyTrack * (note - 60) / 12);
+      const baseCutoff = clamp(P.cutoff * keyTrackMul, 20, 18000);
+      const q = 0.5 + P.resonance * 17.5;
+      v.filterStages.forEach(f => { f.frequency.setTargetAtTime(baseCutoff, audioCtx.currentTime, 0.01); f.Q.setTargetAtTime(q, audioCtx.currentTime, 0.01); });
+    }
+    if (key === "mixA") v.mixA.gain.setTargetAtTime(P.mixA, audioCtx.currentTime, 0.01);
+    if (key === "mixB" && !P.oscBLowFreq) v.mixB.gain.setTargetAtTime(P.mixB, audioCtx.currentTime, 0.01);
+    if (key === "mixNoise") v.mixN.gain.setTargetAtTime(P.mixNoise, audioCtx.currentTime, 0.01);
+    if (key === "pwA" && v.oscA.pwDelay) v.oscA.pwDelay.delayTime.setTargetAtTime(clamp(P.pwA, 0.02, 0.98) * v.oscA.period, audioCtx.currentTime, 0.01);
+    if (key === "pwB" && v.oscB.pwDelay) v.oscB.pwDelay.delayTime.setTargetAtTime(clamp(P.pwB, 0.02, 0.98) * v.oscB.period, audioCtx.currentTime, 0.01);
+    if (key === "lfoDepth") {
+      if (v.lfoNodes.pitchA) v.lfoNodes.pitchA.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPitchCents, audioCtx.currentTime, 0.01);
+      if (v.lfoNodes.pitchB) v.lfoNodes.pitchB.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPitchCents, audioCtx.currentTime, 0.01);
+      if (v.lfoNodes.pwA) v.lfoNodes.pwA.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPWFrac * v.oscA.period, audioCtx.currentTime, 0.01);
+      if (v.lfoNodes.pwB) v.lfoNodes.pwB.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPWFrac * v.oscB.period, audioCtx.currentTime, 0.01);
+      if (v.lfoNodes.filter) v.lfoNodes.filter.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoFilterHz, audioCtx.currentTime, 0.01);
+    }
+    if (key === "polyFilterEnvAmt") {
+      if (v.polyNodes.feFreqA) v.polyNodes.feFreqA.gain.setTargetAtTime(P.polyFilterEnvAmt * RANGE.polyFreqCents, audioCtx.currentTime, 0.01);
+      if (v.polyNodes.fePW) v.polyNodes.fePW.gain.setTargetAtTime(P.polyFilterEnvAmt * RANGE.polyPWFrac * v.oscA.period, audioCtx.currentTime, 0.01);
+      if (v.polyNodes.feFilter) v.polyNodes.feFilter.gain.setTargetAtTime(P.polyFilterEnvAmt * RANGE.polyFilterHz, audioCtx.currentTime, 0.01);
+    }
+    if (key === "polyOscBAmt") {
+      if (v.polyNodes.obFreqA) v.polyNodes.obFreqA.gain.setTargetAtTime(P.polyOscBAmt * RANGE.polyFreqCents, audioCtx.currentTime, 0.01);
+      if (v.polyNodes.obPW) v.polyNodes.obPW.gain.setTargetAtTime(P.polyOscBAmt * RANGE.polyPWFrac * v.oscA.period, audioCtx.currentTime, 0.01);
+      if (v.polyNodes.obFilter) v.polyNodes.obFilter.gain.setTargetAtTime(P.polyOscBAmt * RANGE.polyFilterHz, audioCtx.currentTime, 0.01);
+    }
+    if (key === "wheelAmount" || key === "modWheel") {
+      const wf = P.wheelAmount * (modWheelValue / 127);
+      if (v.wheelNodes.pitch) v.wheelNodes.pitch.gain.setTargetAtTime(wf * RANGE.wheelPitchCents, audioCtx.currentTime, 0.01);
+      if (v.wheelNodes.filter) v.wheelNodes.filter.gain.setTargetAtTime(wf * RANGE.wheelFilterHz, audioCtx.currentTime, 0.01);
+    }
+  });
+}
+
+// ============ UI SLIDER MAP ============
+const sliderMap = {
+  pwA: { fmt: v => Math.round(v * 100) + "%" },
+  pwB: { fmt: v => Math.round(v * 100) + "%" },
+  oscBCoarse: { fmt: v => Math.round(v) + " st" },
+  oscBFine: { fmt: v => Math.round(v) + " ct" },
+  mixA: { fmt: v => Math.round(v * 100) + "%" },
+  mixB: { fmt: v => Math.round(v * 100) + "%" },
+  mixNoise: { fmt: v => Math.round(v * 100) + "%" },
+  glideTime: { fmt: v => v.toFixed(2) + "s" },
+  unisonDetune: { fmt: v => Math.round(v) + " ct" },
+  cutoff: { fmt: v => Math.round(v) + " Hz" },
+  resonance: { fmt: v => v.toFixed(2) },
+  filterEnvAmount: { fmt: v => v.toFixed(2) },
+  fAttack: { fmt: v => v.toFixed(2) + "s" },
+  fDecay: { fmt: v => v.toFixed(2) + "s" },
+  fSustain: { fmt: v => v.toFixed(2) },
+  fRelease: { fmt: v => v.toFixed(2) + "s" },
+  aAttack: { fmt: v => v.toFixed(2) + "s" },
+  aDecay: { fmt: v => v.toFixed(2) + "s" },
+  aSustain: { fmt: v => v.toFixed(2) },
+  aRelease: { fmt: v => v.toFixed(2) + "s" },
+  masterVolume: { fmt: v => Math.round(v * 100) + "%" },
+  masterTune: { fmt: v => Math.round(v) + " ct" },
+  lfoRate: { fmt: v => v.toFixed(1) + " Hz" },
+  lfoDepth: { fmt: v => v.toFixed(2) },
+  polyFilterEnvAmt: { fmt: v => v.toFixed(2) },
+  polyOscBAmt: { fmt: v => v.toFixed(2) },
+  wheelAmount: { fmt: v => v.toFixed(2) }
+};
+
+Object.keys(sliderMap).forEach(key => {
+  const input = document.getElementById(key);
+  if (!input) return;
+  input.addEventListener("input", () => {
+    const v = parseFloat(input.value);
+    P[key] = v;
+    if (key === "masterVolume") masterGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.01);
+    liveUpdate(key);
+    saveActiveState(); // Autosave values
+  });
+});
+
+document.getElementById("octave").addEventListener("input", e => {
+  octaveShift = parseInt(e.target.value);
+  document.getElementById("octaveVal").textContent = octaveShift;
+  saveActiveState();
+});
+document.getElementById("keyTrack").addEventListener("change", e => { P.keyTrack = parseFloat(e.target.value); liveUpdate("cutoff"); saveActiveState(); });
+document.getElementById("maxVoices").addEventListener("change", e => { P.maxVoices = parseInt(e.target.value); saveActiveState(); });
+
+// Poly-mod checkboxes
+['polyFE_freqA','polyFE_pw','polyFE_filter','polyOB_freqA','polyOB_pw','polyOB_filter'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('change', () => { P[id] = el.checked; saveActiveState(); });
+});
+
+// Waveform select
+document.querySelectorAll(".waveform-selector[data-group]").forEach(group => {
+  group.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-val]");
+    if (!btn) return;
+    const key = group.dataset.group;
+    group.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    P[key] = btn.dataset.val;
+    if (key === "lfoShape") lfoOsc.type = btn.dataset.val;
+    saveActiveState();
+  });
+});
+
+// Toggles
+document.querySelectorAll("button[data-flag]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const flag = btn.dataset.flag;
+    P[flag] = !P[flag];
+    btn.classList.toggle("on", P[flag]);
+    saveActiveState();
+  });
+});
+
+document.getElementById("testBtn").addEventListener("click", () => {
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  noteOn(60, 100);
+  setTimeout(() => noteOff(60), 500);
+});
+
+// ============ On Screen Keyboard ============
+const keyboardEl = document.getElementById("keyboard");
+const startNote = 48;
+const totalWhite = 21;
+function buildKeyboard() {
+  keyboardEl.innerHTML = "";
+  const isBlack = pc => [1, 3, 6, 8, 10].includes(pc % 12);
+  let whites = 0, cur = startNote;
+  const noteList = [];
+  while (whites < totalWhite) {
+    noteList.push(cur);
+    if (!isBlack(cur)) whites++;
+    cur++;
+  }
+  noteList.forEach(nt => {
+    const black = isBlack(nt);
+    const key = document.createElement("div");
+    key.className = "key " + (black ? "black" : "white");
+    key.dataset.note = nt;
+    keyboardEl.appendChild(key);
+    key.addEventListener("mousedown", () => { noteOn(nt, 100); key.classList.add("active"); });
+    key.addEventListener("mouseup", () => { noteOff(nt); key.classList.remove("active"); });
+    key.addEventListener("mouseleave", () => { if (key.classList.contains("active")) { noteOff(nt); key.classList.remove("active"); } });
+  });
+}
+buildKeyboard();
+
+// Flash key based on physical octave offset
+function flashKey(note, on) {
+  const el = keyboardEl.querySelector(`[data-note="${note - octaveShift * 12}"]`);
+  if (el) el.classList.toggle("active", on);
+}
+
+// ============ CC Map MIDI Learn ============
+const bankDefaults = {
+  A: { 1: "cutoff", 2: "resonance", 3: "filterEnvAmount", 4: "oscBFine", 5: "mixA", 6: "mixB", 7: "mixNoise", 8: "masterVolume" },
+  B: { 1: "aAttack", 2: "aDecay", 3: "aSustain", 4: "aRelease", 5: "lfoRate", 6: "lfoDepth", 7: "polyFilterEnvAmt", 8: "polyOscBAmt" }
+};
+let ccMaps = { A: { ...bankDefaults.A }, B: { ...bankDefaults.B } };
+
+// Load custom MIDI Learn mappings from localStorage
+try {
+  const storedCc = localStorage.getItem("prophet_concentric_ccmaps");
+  if (storedCc) {
+    ccMaps = JSON.parse(storedCc);
+  }
+} catch (e) {
+  console.warn("localStorage ccMaps load failed:", e);
+}
+
+let activeBank = "A";
+let learning = null;
+
+// Render CC list table inside MIDI Manager card
+function renderCcList() {
+  const el = document.getElementById("ccList");
+  const map = ccMaps[activeBank];
+  el.innerHTML = Object.entries(map)
+    .map(([cc, param]) => `<div><b>K${cc}</b> → ${param || "<i>livre</i>"}</div>`)
+    .join("");
+}
+renderCcList();
+
+document.getElementById("bankA").addEventListener("click", () => switchBank("A"));
+document.getElementById("bankB").addEventListener("click", () => switchBank("B"));
+function switchBank(b, skipSave = false) {
+  activeBank = b;
+  document.getElementById("bankA").classList.toggle("active", b === "A");
+  document.getElementById("bankB").classList.toggle("active", b === "B");
+  renderCcList();
+  if (!skipSave) {
+    saveActiveState(); // Save current Bank focus
+  }
+}
+
+// Delegated document click listener for dynamic MIDI Learn (LRN) buttons
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".learn-btn");
+  if (!btn) return;
+  
+  // Clear any other active learn button state
+  document.querySelectorAll(".learn-btn").forEach(b => {
+    if (b !== btn) b.classList.remove("active");
+  });
+
+  if (learning === btn.dataset.param) {
+    learning = null;
+    btn.classList.remove("active");
+    log("MIDI Learn cancelado.");
+  } else {
+    learning = btn.dataset.param;
+    btn.classList.add("active");
+    log(`MIDI Learn ativo: Gire um Knob para mapear [${formatters[learning]?.label || learning}]`);
+  }
+});
+
+function applyCC(cc, value) {
+  const param = ccMaps[activeBank][cc];
+  if (!param) return;
+  const input = document.getElementById(param);
+  if (!input) return;
+  const min = parseFloat(input.min), max = parseFloat(input.max);
+  const norm = value / 127;
+  input.value = min + norm * (max - min);
+  input.dispatchEvent(new Event("input"));
+}
+
+// ============ Log ============
+const logEl = document.getElementById("log");
+function log(msg) {
+  const t = new Date().toLocaleTimeString();
+  logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
+  const lines = logEl.textContent.split("\n");
+  if (lines.length > 100) logEl.textContent = lines.slice(0, 100).join("\n");
+}
+
+// ============ MIDI Connect ============
+const dot = document.getElementById("dot");
+const statusText = document.getElementById("statusText");
+const deviceSelect = document.getElementById("deviceSelect");
+let midiAccess = null;
+let currentInput = null;
+
+document.getElementById("connectBtn").addEventListener("click", initMIDI);
+
+async function initMIDI() {
+  if (!navigator.requestMIDIAccess) {
+    statusText.textContent = "MIDI não suportado";
+    log("Erro: navigator.requestMIDIAccess não disponível.");
+    return;
+  }
+  try {
+    // Request access with sysex enabled (crucial for advanced controllers to operate fully)
+    midiAccess = await navigator.requestMIDIAccess({ sysex: true });
+    populateDevices();
+    midiAccess.onstatechange = populateDevices;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    log("Acesso MIDI Concedido com Sysex.");
+  } catch (err) {
+    // Fallback if sysex is denied
+    try {
+      midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+      populateDevices();
+      midiAccess.onstatechange = populateDevices;
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      log("Acesso MIDI Concedido (Sysex desativado).");
+    } catch (fallbackErr) {
+      statusText.textContent = "Permissão Negada";
+      log("Erro ao obter acesso MIDI: " + fallbackErr.message);
+    }
+  }
+}
+
+function populateDevices() {
+  deviceSelect.innerHTML = "";
+  const inputs = Array.from(midiAccess.inputs.values());
+  if (inputs.length === 0) {
+    deviceSelect.innerHTML = "<option>Nenhum</option>";
+    dot.classList.remove("on");
+    statusText.textContent = "Sem MIDI";
+    return;
+  }
+  inputs.forEach(input => {
+    const opt = document.createElement("option");
+    opt.value = input.id; 
+    opt.textContent = `${input.name} [${input.state}]`;
+    deviceSelect.appendChild(opt);
+  });
+  
+  // Try connecting to the last used MIDI device ID if available
+  let lastUsedDeviceId = null;
+  try {
+    lastUsedDeviceId = localStorage.getItem("prophet_concentric_midi_device_id");
+  } catch(e) {}
+
+  const savedInputExists = inputs.find(x => x.id === lastUsedDeviceId);
+
+  if (savedInputExists) {
+    deviceSelect.value = lastUsedDeviceId;
+    selectDevice(lastUsedDeviceId);
+  } else if (!currentInput && inputs.length > 0) {
+    deviceSelect.value = inputs[0].id;
+    selectDevice(inputs[0].id);
+  } else if (currentInput) {
+    // Re-sync dropdown to current selection if still available
+    const exists = inputs.find(x => x.id === currentInput.id);
+    if (exists) {
+      deviceSelect.value = currentInput.id;
+    } else {
+      dot.classList.remove("on");
+      statusText.textContent = "Desconectado";
+      log("Aparelho ativo desconectado fisicamente.");
+    }
+  }
+}
+
+deviceSelect.addEventListener("change", () => selectDevice(deviceSelect.value));
+
+async function selectDevice(id) {
+  if (currentInput) {
+    currentInput.onmidimessage = null;
+    log("Porta fechada: " + currentInput.name);
+  }
+  currentInput = midiAccess.inputs.get(id);
+  if (!currentInput) return;
+  
+  try {
+    // Explicitly open the port - solves issues with silent/unresponsive inputs
+    await currentInput.open();
+    currentInput.onmidimessage = onMIDIMessage;
+    dot.classList.add("on");
+    statusText.textContent = currentInput.name;
+    log(`Porta Ativa: ${currentInput.name} (Conexão: ${currentInput.connection}, Estado: ${currentInput.state})`);
+    
+    // Save last successfully selected MIDI Device
+    try {
+      localStorage.setItem("prophet_concentric_midi_device_id", id);
+    } catch(e) {}
+  } catch (err) {
+    log("Erro ao abrir dispositivo MIDI: " + err.message);
+  }
+}
+
+function onMIDIMessage(e) {
+  try {
+    if (!e.data || e.data.length === 0) return;
+    const status = e.data[0];
+    
+    // Ignore MIDI Clock spam (0xF8), Active Sensing (0xFE), Tick (0xF9) to prevent log flooding
+    if (status >= 0xF8) return;
+
+    const d1 = e.data[1];
+    const d2 = e.data[2];
+    const cmd = status & 0xf0;
+
+    // Log the raw incoming bytes for live debugging
+    const hexString = Array.from(e.data).map(x => x.toString(16).toUpperCase().padStart(2, '0')).join(' ');
+    log(`MIDI RX [${e.data.length}B]: ${hexString}`);
+
+    if (audioCtx.state === "suspended") audioCtx.resume();
+
+    if (cmd === 0x90 && d2 > 0) {
+      noteOn(d1, d2); 
+      flashKey(d1, true);
+    } else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) {
+      noteOff(d1); 
+      flashKey(d1, false);
+    } else if (cmd === 0xB0) {
+      if (d1 === 1) {
+        modWheelValue = d2;
+        liveUpdate("modWheel");
+        return;
+      }
+      if (learning) {
+        ccMaps[activeBank][d1] = learning;
+        try {
+          localStorage.setItem("prophet_concentric_ccmaps", JSON.stringify(ccMaps));
+        } catch(err) {
+          console.warn("Could not save ccMaps to localStorage", err);
+        }
+        log(`Mapeado CC ${d1} para ${learning}`);
+        
+        // Remove active class from buttons
+        document.querySelectorAll(".learn-btn").forEach(b => b.classList.remove("active"));
+        learning = null;
+        renderCcList();
+        return;
+      }
+      applyCC(d1, d2);
+    } else if (cmd === 0xE0) {
+      const value14 = (d2 << 7) | d1;
+      const norm = (value14 - 8192) / 8192;
+      pitchBendCents = norm * RANGE.pitchBendCents;
+      voices.forEach(v => {
+        applyDetuneToOsc(v.oscA, pitchBendCents);
+        if (!P.oscBLowFreq) applyDetuneToOsc(v.oscB, pitchBendCents);
+      });
+    }
+  } catch (err) {
+    log("Erro no processamento MIDI: " + err.message);
+  }
+}
+
+// Keyboard Fallback
+const keyToNote = { a: 60, w: 61, s: 62, e: 63, d: 64, f: 65, t: 66, g: 67, y: 68, h: 69, u: 70, j: 71, k: 72 };
+const heldKeys = new Set();
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (e.repeat) return;
+  const note = keyToNote[e.key.toLowerCase()];
+  if (note != null && !heldKeys.has(note)) {
+    heldKeys.add(note); noteOn(note, 100); flashKey(note, true);
+  }
+});
+document.addEventListener("keyup", e => {
+  const note = keyToNote[e.key.toLowerCase()];
+  if (note != null) { heldKeys.delete(note); noteOff(note); flashKey(note, false); }
+});
+
+// ================================================================
+//  PRESETS SYSTEM (Factory & User LocalStorage)
+// ================================================================
+const factoryPresets = {
+  "Pro-V Brass": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 10, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.6, mixNoise: 0.05,
+    cutoff: 1200, resonance: 0.15, keyTrack: 0.5,
+    filterEnvAmount: 0.6, fAttack: 0.15, fDecay: 0.6, fSustain: 0.4, fRelease: 0.4,
+    aAttack: 0.08, aDecay: 0.3, aSustain: 0.8, aRelease: 0.4,
+    lfoShape: "sine", lfoRate: 4, lfoDepth: 0.15,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.3,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 6, masterVolume: 0.7, masterTune: 0
+  },
+  "Snappy Bass": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.4, oscBCoarse: -12, oscBFine: 5, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.7, mixB: 0.7, mixNoise: 0.1,
+    cutoff: 400, resonance: 0.35, keyTrack: 0,
+    filterEnvAmount: 0.8, fAttack: 0.005, fDecay: 0.2, fSustain: 0.1, fRelease: 0.15,
+    aAttack: 0.005, aDecay: 0.15, aSustain: 0.9, aRelease: 0.2,
+    lfoShape: "sine", lfoRate: 5, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.1,
+    unisonOn: true, unisonDetune: 12,
+    maxVoices: 4, masterVolume: 0.75, masterTune: 0
+  },
+  "80s Poly Lead": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "triangle", pwB: 0.5, oscBCoarse: 0, oscBFine: 15, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.4, mixNoise: 0,
+    cutoff: 4000, resonance: 0.1, keyTrack: 0.5,
+    filterEnvAmount: 0.3, fAttack: 0.01, fDecay: 0.4, fSustain: 0.7, fRelease: 0.5,
+    aAttack: 0.01, aDecay: 0.2, aSustain: 0.7, aRelease: 0.5,
+    lfoShape: "sine", lfoRate: 6.2, lfoDepth: 0.25,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.4,
+    glideOn: true, glideTime: 0.08,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 6, masterVolume: 0.65, masterTune: 0
+  },
+  "Ambient Wind": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: 12, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.2, mixB: 0.2, mixNoise: 0.8,
+    cutoff: 800, resonance: 0.85, keyTrack: 1.0,
+    filterEnvAmount: 0.4, fAttack: 1.2, fDecay: 1.5, fSustain: 0.6, fRelease: 1.8,
+    aAttack: 0.8, aDecay: 1.0, aSustain: 0.8, aRelease: 1.8,
+    lfoShape: "sine", lfoRate: 0.2, lfoDepth: 0.4,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: true, wheelAmount: 0.6,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.7, masterTune: 0
+  },
+  "Synthwave Pluck": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.45, oscBCoarse: 0, oscBFine: 8, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.5, mixNoise: 0,
+    cutoff: 800, resonance: 0.25, keyTrack: 0.5,
+    filterEnvAmount: 0.7, fAttack: 0.005, fDecay: 0.15, fSustain: 0, fRelease: 0.15,
+    aAttack: 0.005, aDecay: 0.2, aSustain: 0, aRelease: 0.2,
+    lfoShape: "sine", lfoRate: 4, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.1,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 6, masterVolume: 0.7, masterTune: 0
+  },
+  "Reso-Clav": {
+    waveA: "pulse", pwA: 0.25,
+    waveB: "pulse", pwB: 0.25, oscBCoarse: 12, oscBFine: 15, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.6, mixNoise: 0,
+    cutoff: 1000, resonance: 0.65, keyTrack: 1.0,
+    filterEnvAmount: 0.65, fAttack: 0.005, fDecay: 0.1, fSustain: 0.2, fRelease: 0.1,
+    aAttack: 0.005, aDecay: 0.15, aSustain: 0.4, aRelease: 0.15,
+    lfoShape: "triangle", lfoRate: 6, lfoDepth: 0.15,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: true, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.1,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 5, masterVolume: 0.65, masterTune: 0
+  },
+  "Warm Pad": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 12, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.6, mixB: 0.5, mixNoise: 0.05,
+    cutoff: 900, resonance: 0.1, keyTrack: 0.5,
+    filterEnvAmount: 0.35, fAttack: 0.6, fDecay: 1.2, fSustain: 0.6, fRelease: 1.0,
+    aAttack: 0.5, aDecay: 1.0, aSustain: 0.8, aRelease: 1.2,
+    lfoShape: "sine", lfoRate: 2.5, lfoDepth: 0.12,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: true, wheelAmount: 0.4,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.7, masterTune: 0
+  },
+  "Sci-Fi Siren": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.5, oscBCoarse: 0, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.5, mixB: 0.5, mixNoise: 0.1,
+    cutoff: 4000, resonance: 0.5, keyTrack: 0.5,
+    filterEnvAmount: 0.5, fAttack: 0.2, fDecay: 0.8, fSustain: 0.5, fRelease: 0.5,
+    aAttack: 0.1, aDecay: 0.5, aSustain: 0.8, aRelease: 0.5,
+    lfoShape: "square", lfoRate: 15.0, lfoDepth: 0.8,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.8,
+    glideOn: true, glideTime: 0.6,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 3, masterVolume: 0.6, masterTune: 0
+  },
+  "Solo Flute": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: 12, oscBFine: 5, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.2, mixNoise: 0.15,
+    cutoff: 1800, resonance: 0.2, keyTrack: 0.8,
+    filterEnvAmount: 0.2, fAttack: 0.08, fDecay: 0.3, fSustain: 0.9, fRelease: 0.25,
+    aAttack: 0.06, aDecay: 0.2, aSustain: 0.9, aRelease: 0.25,
+    lfoShape: "sine", lfoRate: 5.5, lfoDepth: 0.18,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.3,
+    glideOn: true, glideTime: 0.05,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 2, masterVolume: 0.7, masterTune: 0
+  },
+  "Ringing Bells": {
+    waveA: "pulse", pwA: 0.15,
+    waveB: "triangle", pwB: 0.5, oscBCoarse: 19, oscBFine: 35, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.4, mixB: 0.8, mixNoise: 0.1,
+    cutoff: 2500, resonance: 0.4, keyTrack: 0.5,
+    filterEnvAmount: 0.75, fAttack: 0.002, fDecay: 1.5, fSustain: 0, fRelease: 1.0,
+    aAttack: 0.002, aDecay: 1.2, aSustain: 0, aRelease: 1.0,
+    lfoShape: "sine", lfoRate: 3.5, lfoDepth: 0.2,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 6, masterVolume: 0.65, masterTune: 0
+  },
+  "Unison Swarm": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 20, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.7, mixNoise: 0.05,
+    cutoff: 6000, resonance: 0.15, keyTrack: 0.5,
+    filterEnvAmount: 0.4, fAttack: 0.05, fDecay: 0.5, fSustain: 0.7, fRelease: 0.5,
+    aAttack: 0.02, aDecay: 0.4, aSustain: 0.8, aRelease: 0.5,
+    lfoShape: "sine", lfoRate: 4.5, lfoDepth: 0.15,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: true, unisonDetune: 38,
+    maxVoices: 8, masterVolume: 0.6, masterTune: 0
+  },
+  "Space FX Sweep": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: -24, oscBFine: -100, oscBLowFreq: true, oscBSync: false,
+    mixA: 0.1, mixB: 0.1, mixNoise: 0.9,
+    cutoff: 100, resonance: 0.95, keyTrack: 0.2,
+    filterEnvAmount: 0.9, fAttack: 2.0, fDecay: 1.5, fSustain: 0.2, fRelease: 2.0,
+    aAttack: 1.5, aDecay: 1.0, aSustain: 0.8, aRelease: 2.0,
+    lfoShape: "triangle", lfoRate: 0.5, lfoDepth: 0.6,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: true, wheelAmount: 0.8,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 4, masterVolume: 0.7, masterTune: 0
+  },
+  "Fat Square Bass": {
+    waveA: "pulse", pwA: 0.45,
+    waveB: "pulse", pwB: 0.5, oscBCoarse: -12, oscBFine: 6, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.8, mixNoise: 0.05,
+    cutoff: 550, resonance: 0.2, keyTrack: 0.2,
+    filterEnvAmount: 0.6, fAttack: 0.005, fDecay: 0.25, fSustain: 0.2, fRelease: 0.2,
+    aAttack: 0.005, aDecay: 0.15, aSustain: 0.85, aRelease: 0.25,
+    lfoShape: "sine", lfoRate: 3.5, lfoDepth: 0.15,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: true, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: true, unisonDetune: 8,
+    maxVoices: 6, masterVolume: 0.75, masterTune: 0
+  },
+  "Ethereal Chimes": {
+    waveA: "sine", pwA: 0.5,
+    waveB: "triangle", pwB: 0.5, oscBCoarse: 24, oscBFine: 12, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.5, mixB: 0.9, mixNoise: 0.05,
+    cutoff: 3500, resonance: 0.3, keyTrack: 0.5,
+    filterEnvAmount: 0.45, fAttack: 0.01, fDecay: 0.9, fSustain: 0.3, fRelease: 1.2,
+    aAttack: 0.02, aDecay: 0.7, aSustain: 0.5, aRelease: 1.2,
+    lfoShape: "sine", lfoRate: 1.5, lfoDepth: 0.3,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: true, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.7, masterTune: 0
+  },
+  "Classic Organ": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.5, oscBCoarse: 12, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.7, mixNoise: 0.02,
+    cutoff: 8000, resonance: 0.05, keyTrack: 0.5,
+    filterEnvAmount: 0.1, fAttack: 0.001, fDecay: 0.1, fSustain: 1.0, fRelease: 0.05,
+    aAttack: 0.001, aDecay: 0.1, aSustain: 1.0, aRelease: 0.05,
+    lfoShape: "sine", lfoRate: 6.0, lfoDepth: 0.15,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.4,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.65, masterTune: 0
+  },
+  "Lazer Zap": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: -12, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0, mixNoise: 0,
+    cutoff: 200, resonance: 0.75, keyTrack: 0.2,
+    filterEnvAmount: 0.9, fAttack: 0.002, fDecay: 0.08, fSustain: 0, fRelease: 0.08,
+    aAttack: 0.002, aDecay: 0.1, aSustain: 0, aRelease: 0.1,
+    lfoShape: "sine", lfoRate: 8, lfoDepth: 0.2,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 1, masterVolume: 0.7, masterTune: 0
+  },
+  "Acid Bass": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 5, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.9, mixB: 0.1, mixNoise: 0,
+    cutoff: 350, resonance: 0.9, keyTrack: 0.5,
+    filterEnvAmount: 0.85, fAttack: 0.005, fDecay: 0.22, fSustain: 0.15, fRelease: 0.2,
+    aAttack: 0.005, aDecay: 0.2, aSustain: 0.8, aRelease: 0.2,
+    lfoShape: "sine", lfoRate: 1.5, lfoDepth: 0.2,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: true, glideTime: 0.08,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 1, masterVolume: 0.7, masterTune: 0
+  },
+  "G-Funk Lead": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: 12, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.4, mixNoise: 0,
+    cutoff: 2500, resonance: 0.1, keyTrack: 0.5,
+    filterEnvAmount: 0.1, fAttack: 0.05, fDecay: 0.3, fSustain: 0.9, fRelease: 0.3,
+    aAttack: 0.05, aDecay: 0.2, aSustain: 0.9, aRelease: 0.3,
+    lfoShape: "sine", lfoRate: 6.0, lfoDepth: 0.25,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: true, glideTime: 0.25,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 1, masterVolume: 0.7, masterTune: 0
+  },
+  "Phasey String Pad": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.5, oscBCoarse: 0, oscBFine: 15, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.6, mixB: 0.6, mixNoise: 0.1,
+    cutoff: 1500, resonance: 0.2, keyTrack: 0.5,
+    filterEnvAmount: 0.4, fAttack: 0.8, fDecay: 1.5, fSustain: 0.7, fRelease: 1.5,
+    aAttack: 0.6, aDecay: 1.2, aSustain: 0.8, aRelease: 1.5,
+    lfoShape: "triangle", lfoRate: 1.2, lfoDepth: 0.5,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: true, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: true, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.65, masterTune: 0
+  },
+  "Woodblock Perc": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: 7, oscBFine: 15, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.9, mixB: 0.3, mixNoise: 0.1,
+    cutoff: 800, resonance: 0.45, keyTrack: 0.9,
+    filterEnvAmount: 0.8, fAttack: 0.001, fDecay: 0.06, fSustain: 0, fRelease: 0.06,
+    aAttack: 0.001, aDecay: 0.08, aSustain: 0, aRelease: 0.08,
+    lfoShape: "sine", lfoRate: 5, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 6, masterVolume: 0.7, masterTune: 0
+  },
+  "Deep Space Drone": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: -24, oscBFine: 0, oscBLowFreq: true, oscBSync: false,
+    mixA: 0.3, mixB: 0.3, mixNoise: 0.8,
+    cutoff: 250, resonance: 0.5, keyTrack: 0.2,
+    filterEnvAmount: 0.3, fAttack: 2.0, fDecay: 2.0, fSustain: 0.8, fRelease: 2.5,
+    aAttack: 2.0, aDecay: 1.5, aSustain: 0.9, aRelease: 2.5,
+    lfoShape: "sine", lfoRate: 0.08, lfoDepth: 0.7,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: true, unisonDetune: 25,
+    maxVoices: 4, masterVolume: 0.65, masterTune: 0
+  },
+  "Retro Game Jump": {
+    waveA: "pulse", pwA: 0.5,
+    waveB: "pulse", pwB: 0.5, oscBCoarse: 0, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0, mixNoise: 0.02,
+    cutoff: 2000, resonance: 0.2, keyTrack: 0.5,
+    filterEnvAmount: 0.3, fAttack: 0.05, fDecay: 0.15, fSustain: 0, fRelease: 0.15,
+    aAttack: 0.02, aDecay: 0.2, aSustain: 0, aRelease: 0.2,
+    lfoShape: "sine", lfoRate: 5, lfoDepth: 0.3,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: true, glideTime: 0.28,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 1, masterVolume: 0.7, masterTune: 0
+  },
+  "Metallic Hit": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "pulse", pwB: 0.15, oscBCoarse: 28, oscBFine: 45, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.3, mixB: 0.8, mixNoise: 0.3,
+    cutoff: 1200, resonance: 0.75, keyTrack: 0.5,
+    filterEnvAmount: 0.8, fAttack: 0.002, fDecay: 0.18, fSustain: 0, fRelease: 0.2,
+    aAttack: 0.002, aDecay: 0.25, aSustain: 0, aRelease: 0.25,
+    lfoShape: "sine", lfoRate: 6.0, lfoDepth: 0.2,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 5, masterVolume: 0.65, masterTune: 0
+  },
+  "Ghostly Choir": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sawtooth", pwB: 0.5, oscBCoarse: 0, oscBFine: 18, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.5, mixB: 0.4, mixNoise: 0.3,
+    cutoff: 750, resonance: 0.8, keyTrack: 0.7,
+    filterEnvAmount: 0.35, fAttack: 0.3, fDecay: 0.6, fSustain: 0.8, fRelease: 0.8,
+    aAttack: 0.2, aDecay: 0.5, aSustain: 0.85, aRelease: 0.8,
+    lfoShape: "sine", lfoRate: 5.2, lfoDepth: 0.2,
+    lfoToOscA: true, lfoToOscB: true, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: true, wheelToFilter: false, wheelAmount: 0.4,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.65, masterTune: 0
+  },
+  "Detroit Techno Chord": {
+    waveA: "sawtooth", pwA: 0.5,
+    waveB: "pulse", pwB: 0.4, oscBCoarse: 7, oscBFine: 12, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.8, mixB: 0.7, mixNoise: 0.05,
+    cutoff: 1200, resonance: 0.3, keyTrack: 0.4,
+    filterEnvAmount: 0.6, fAttack: 0.005, fDecay: 0.22, fSustain: 0.1, fRelease: 0.2,
+    aAttack: 0.005, aDecay: 0.25, aSustain: 0.75, aRelease: 0.2,
+    lfoShape: "sine", lfoRate: 4, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: true, unisonDetune: 12,
+    maxVoices: 6, masterVolume: 0.7, masterTune: 0
+  },
+  "Sub-Bass Boom": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: -12, oscBFine: 0, oscBLowFreq: false, oscBSync: false,
+    mixA: 0.9, mixB: 0.1, mixNoise: 0,
+    cutoff: 150, resonance: 0, keyTrack: 0.1,
+    filterEnvAmount: 0.2, fAttack: 0.005, fDecay: 0.4, fSustain: 0, fRelease: 0.4,
+    aAttack: 0.005, aDecay: 0.45, aSustain: 0, aRelease: 0.45,
+    lfoShape: "sine", lfoRate: 3, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 1, masterVolume: 0.8, masterTune: 0
+  },
+  "FM-Style Rhodes": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "sine", pwB: 0.5, oscBCoarse: 12, oscBFine: 5, oscBLowFreq: false, oscBSync: true,
+    mixA: 0.9, mixB: 0.4, mixNoise: 0.02,
+    cutoff: 3500, resonance: 0.1, keyTrack: 0.5,
+    filterEnvAmount: 0.5, fAttack: 0.002, fDecay: 0.8, fSustain: 0.3, fRelease: 0.8,
+    aAttack: 0.005, aDecay: 0.6, aSustain: 0.6, aRelease: 0.8,
+    lfoShape: "sine", lfoRate: 4.5, lfoDepth: 0.1,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: false,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 8, masterVolume: 0.7, masterTune: 0
+  },
+  "Helicopter Noise": {
+    waveA: "triangle", pwA: 0.5,
+    waveB: "triangle", pwB: 0.5, oscBCoarse: 0, oscBFine: 0, oscBLowFreq: true, oscBSync: false,
+    mixA: 0, mixB: 0, mixNoise: 1.0,
+    cutoff: 400, resonance: 0.4, keyTrack: 0.2,
+    filterEnvAmount: 0.1, fAttack: 0.1, fDecay: 0.5, fSustain: 0.8, fRelease: 0.5,
+    aAttack: 0.08, aDecay: 0.5, aSustain: 0.8, aRelease: 0.5,
+    lfoShape: "square", lfoRate: 5.5, lfoDepth: 0.8,
+    lfoToOscA: false, lfoToOscB: false, lfoToPW: false, lfoToFilter: true,
+    polyFE_freqA: false, polyFE_pw: false, polyFE_filter: false,
+    polyOB_freqA: false, polyOB_pw: false, polyOB_filter: false,
+    polyFilterEnvAmt: 0, polyOscBAmt: 0,
+    wheelToPitch: false, wheelToFilter: false, wheelAmount: 0.5,
+    glideOn: false, glideTime: 0.15,
+    unisonOn: false, unisonDetune: 10,
+    maxVoices: 4, masterVolume: 0.65, masterTune: 0
+  }
+};
+
+let userPresets = {};
+
+function initPresetsSystem() {
+  // Load User Presets from localStorage
+  try {
+    const stored = localStorage.getItem("prophet_concentric_presets");
+    if (stored) userPresets = JSON.parse(stored);
+  } catch (e) {
+    console.warn("localStorage presets load failed:", e);
+  }
+
+  const select = document.getElementById("presetSelect");
+  const saveBtn = document.getElementById("savePresetBtn");
+  const delBtn = document.getElementById("deletePresetBtn");
+
+  function populatePresetsDropdown() {
+    select.innerHTML = "";
+    
+    // Factory group
+    const factGroup = document.createElement("optgroup");
+    factGroup.label = "Factory Presets";
+    Object.keys(factoryPresets).forEach(name => {
+      const opt = document.createElement("option");
+      opt.value = "fact_" + name;
+      opt.textContent = name;
+      factGroup.appendChild(opt);
+    });
+    select.appendChild(factGroup);
+    
+    // User group
+    const userGroup = document.createElement("optgroup");
+    userGroup.label = "User Presets";
+    const userNames = Object.keys(userPresets);
+    if (userNames.length > 0) {
+      userNames.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = "user_" + name;
+        opt.textContent = name;
+        userGroup.appendChild(opt);
+      });
+    } else {
+      const opt = document.createElement("option");
+      opt.disabled = true;
+      opt.textContent = "(Nenhum salvo)";
+      userGroup.appendChild(opt);
+    }
+    select.appendChild(userGroup);
+  }
+
+  function applyPreset(presetData, skipSave = false) {
+    // Merge parameters into P
+    Object.assign(P, presetData);
+    
+    // Sync all range inputs
+    Object.keys(sliderMap).forEach(key => {
+      const input = document.getElementById(key);
+      if (input && presetData[key] !== undefined) {
+        input.value = presetData[key];
+      }
+    });
+
+    // Update masterVolume gain node
+    masterGain.gain.setTargetAtTime(P.masterVolume, audioCtx.currentTime, 0.01);
+
+    // Sync select dropdowns
+    const kt = document.getElementById("keyTrack");
+    if (kt && presetData.keyTrack !== undefined) kt.value = presetData.keyTrack;
+
+    const mv = document.getElementById("maxVoices");
+    if (mv && presetData.maxVoices !== undefined) mv.value = presetData.maxVoices;
+
+    // Sync Octave
+    const octInput = document.getElementById("octave");
+    if (octInput && presetData.octave !== undefined) {
+      octInput.value = presetData.octave;
+      octaveShift = parseInt(octInput.value);
+      document.getElementById("octaveVal").textContent = octaveShift;
+    } else {
+      octaveShift = 0;
+      if (octInput) octInput.value = 0;
+      const oVal = document.getElementById("octaveVal");
+      if (oVal) oVal.textContent = "0";
+    }
+
+    // Sync Checkboxes
+    ['polyFE_freqA','polyFE_pw','polyFE_filter','polyOB_freqA','polyOB_pw','polyOB_filter'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && presetData[id] !== undefined) el.checked = !!presetData[id];
+    });
+
+    // Sync Waveform selector active styles
+    document.querySelectorAll(".waveform-selector[data-group]").forEach(group => {
+      const key = group.dataset.group;
+      const val = P[key];
+      group.querySelectorAll("button").forEach(b => {
+        b.classList.toggle("active", b.dataset.val === val);
+      });
+    });
+
+    // Sync flag buttons/toggles
+    document.querySelectorAll("button[data-flag]").forEach(btn => {
+      const flag = btn.dataset.flag;
+      btn.classList.toggle("on", !!P[flag]);
+    });
+
+    // Redraw all concentric canvas circles and legends
+    if (window.dialInstances) {
+      window.dialInstances.forEach(d => {
+        d.draw();
+        d.paramIds.forEach((pid, idx) => d.updateLegendRow(idx));
+      });
+    }
+
+    // Send the changes to any active audio voices
+    Object.keys(P).forEach(key => liveUpdate(key));
+    
+    // Autosave state
+    if (!skipSave) {
+      saveActiveState();
+    }
+  }
+
+  // Handle Preset Selection Change
+  select.addEventListener("change", e => {
+    const val = e.target.value;
+    let data = null;
+    if (val.startsWith("fact_")) {
+      const name = val.replace("fact_", "");
+      data = factoryPresets[name];
+      delBtn.style.display = "none";
+    } else if (val.startsWith("user_")) {
+      const name = val.replace("user_", "");
+      data = userPresets[name];
+      delBtn.style.display = "inline-block";
+    }
+    if (data) {
+      applyPreset(data);
+    }
+  });
+
+  // Handle Saving new Presets
+  saveBtn.addEventListener("click", () => {
+    const name = prompt("Digite o nome do seu novo Preset:");
+    if (!name || name.trim() === "") return;
+    const cleanName = name.trim();
+
+    // Clone parameter state and append visual octave shift
+    const presetData = { ...P, octave: octaveShift };
+    userPresets[cleanName] = presetData;
+    
+    try {
+      localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));
+    } catch(e) {
+      console.warn("Could not save to localStorage", e);
+    }
+
+    populatePresetsDropdown();
+    select.value = "user_" + cleanName;
+    delBtn.style.display = "inline-block";
+    log(`Preset salvo: "${cleanName}"`);
+    saveActiveState();
+  });
+
+  // Handle Deleting custom User Presets
+  delBtn.addEventListener("click", () => {
+    const val = select.value;
+    if (!val.startsWith("user_")) return;
+    const name = val.replace("user_", "");
+
+    if (confirm(`Deseja mesmo apagar o preset "${name}"?`)) {
+      delete userPresets[name];
+      try {
+        localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));
+      } catch(e) {
+        console.warn("Could not delete from localStorage", e);
+      }
+
+      populatePresetsDropdown();
+
+      // Load first factory preset
+      const firstFact = Object.keys(factoryPresets)[0];
+      select.value = "fact_" + firstFact;
+      applyPreset(factoryPresets[firstFact]);
+      delBtn.style.display = "none";
+      log(`Preset removido: "${name}"`);
+      saveActiveState();
+    }
+  });
+
+  // Initialize preset dropdown
+  populatePresetsDropdown();
+
+  // Active State restoration on page load
+  let loadedState = null;
+  try {
+    const storedState = localStorage.getItem("prophet_concentric_active_state");
+    if (storedState) {
+      loadedState = JSON.parse(storedState);
+    }
+  } catch (e) {
+    console.warn("localStorage active state load failed:", e);
+  }
+
+  if (loadedState && loadedState.P) {
+    // Restore Bank
+    if (loadedState.activeBank) {
+      switchBank(loadedState.activeBank, true);
+    }
+    // Apply parameter values
+    applyPreset(loadedState.P, true);
+    // Restore dropdown selection value if present
+    if (loadedState.selectedPreset) {
+      select.value = loadedState.selectedPreset;
+      delBtn.style.display = loadedState.selectedPreset.startsWith("user_") ? "inline-block" : "none";
+    }
+    log("Sessão anterior restaurada.");
+  } else {
+    // Default boot preset
+    const defaultPatch = Object.keys(factoryPresets)[0];
+    select.value = "fact_" + defaultPatch;
+    applyPreset(factoryPresets[defaultPatch], true);
+  }
+}
+</script>
+</body>
+</html>

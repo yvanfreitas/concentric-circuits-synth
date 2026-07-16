@@ -801,7 +801,7 @@ input[type="range"].hidden-range {
       <span>Pro-V — Concentric Arc</span>
     </div>
 
-    <div class="lcd-display" id="progLcd">01 VCE</div>
+    <div class="lcd-display" id="progLcd" style="display: none;">01 VCE</div>
 
     <!-- PRESET CONTROL AREA -->
     <div class="preset-section" style="display:flex; align-items:center; gap:8px;">
@@ -827,7 +827,7 @@ input[type="range"].hidden-range {
       </div>
     </div>
 
-    <div class="hdr-controls">
+    <div class="hdr-controls" style="display: none;">
       <span class="hdr-btn" id="polyBadge" style="cursor:default;">0 vozes</span>
     </div>
   </header>
@@ -1452,8 +1452,10 @@ class ConcentricGaugeDial {
 
     // Determine visual style based on canvasId
     if (this.canvasId === 'canvas-oscA') {
-      // --- 1. OSC A: Pulse Width duty cycle wave ---
+      // --- 1. OSC A: Dynamic waveform drawing ---
       const pw = this.getNormValue(0);
+      const waveType = P.waveA || 'sawtooth';
+
       ctx.beginPath();
       ctx.strokeStyle = ringColors[0];
       ctx.lineWidth = 3;
@@ -1465,18 +1467,44 @@ class ConcentricGaugeDial {
       const width = endX - startX;
       const yHigh = 50;
       const yLow = 100;
-      
-      ctx.moveTo(startX, yLow);
-      // Draw 2 cycles
-      const cycleWidth = width / 2;
-      for (let c = 0; c < 2; c++) {
-        const cX = startX + c * cycleWidth;
-        const highWidth = cycleWidth * pw;
+      const yCenter = 75;
+      const amp = 25; // Amplitude of drawing (75 - 50 = 25)
 
-        ctx.lineTo(cX, yHigh);
-        ctx.lineTo(cX + highWidth, yHigh);
-        ctx.lineTo(cX + highWidth, yLow);
-        ctx.lineTo(cX + cycleWidth, yLow);
+      if (waveType === 'sine') {
+        ctx.moveTo(startX, yCenter);
+        // Draw 2 cycles of sine wave
+        for (let x = 0; x <= width; x++) {
+          const phase = (x / width) * 4 * Math.PI;
+          ctx.lineTo(startX + x, yCenter - Math.sin(phase) * amp);
+        }
+      } else if (waveType === 'triangle') {
+        ctx.moveTo(startX, yCenter);
+        // Draw 2 cycles of triangle wave
+        for (let x = 0; x <= width; x++) {
+          const phase = (x / width) * 4 * Math.PI;
+          const yVal = Math.abs((phase % (2 * Math.PI)) / Math.PI - 1) * 2 - 1;
+          ctx.lineTo(startX + x, yCenter + yVal * amp);
+        }
+      } else if (waveType === 'sawtooth') {
+        // Draw 2 cycles of sawtooth wave
+        const halfWidth = width / 2;
+        ctx.moveTo(startX, yLow);
+        ctx.lineTo(startX + halfWidth, yHigh);
+        ctx.lineTo(startX + halfWidth, yLow);
+        ctx.lineTo(endX, yHigh);
+        ctx.lineTo(endX, yLow);
+      } else { // 'pulse' or 'pulse'
+        // Pulse width duty cycle wave
+        ctx.moveTo(startX, yLow);
+        const cycleWidth = width / 2;
+        for (let c = 0; c < 2; c++) {
+          const cX = startX + c * cycleWidth;
+          const highWidth = cycleWidth * pw;
+          ctx.lineTo(cX, yHigh);
+          ctx.lineTo(cX + highWidth, yHigh);
+          ctx.lineTo(cX + highWidth, yLow);
+          ctx.lineTo(cX + cycleWidth, yLow);
+        }
       }
       ctx.stroke();
 
@@ -1484,7 +1512,11 @@ class ConcentricGaugeDial {
       ctx.fillStyle = 'var(--text-muted)';
       ctx.font = '9px var(--ff-mono)';
       ctx.textAlign = 'center';
-      ctx.fillText(`DUTY: ${Math.round(pw * 100)}%`, cx, 130);
+      if (waveType === 'pulse') {
+        ctx.fillText(`DUTY: ${Math.round(pw * 100)}%`, cx, 130);
+      } else {
+        ctx.fillText(waveType.toUpperCase(), cx, 130);
+      }
 
     } else if (this.canvasId === 'canvas-mixer') {
       // --- 2. MIXER: 3 vertical mixing console faders ---
@@ -1534,20 +1566,38 @@ class ConcentricGaugeDial {
       const endX = 135;
       const width = endX - startX;
       const yBase = 120;
+      const passBandY = 85;
 
-      // Cutoff maps to X, resonance maps to peak height
       const peakX = startX + cutoff * width;
-      const peakHeight = resonance * 60; // Max 60px peak
-      const peakY = yBase - 15 - peakHeight;
+      const peakY = passBandY - resonance * 45;
 
       ctx.beginPath();
-      ctx.moveTo(startX, yBase);
+      const numPoints = 100;
       
-      // Draw frequency response curve
-      ctx.lineTo(Math.max(startX, peakX - 25), yBase);
-      ctx.quadraticCurveTo(peakX - 10, yBase, peakX, peakY);
-      ctx.quadraticCurveTo(peakX + 10, yBase + 10, Math.min(endX, peakX + 45), yBase);
-      ctx.lineTo(endX, yBase);
+      for (let i = 0; i <= numPoints; i++) {
+        const x = startX + (i / numPoints) * width;
+        const normalizedX = i / numPoints; // 0.0 to 1.0
+        
+        let y;
+        if (normalizedX < cutoff) {
+          // Flat passband region, rising to the peak near the cutoff
+          const distanceToCutoff = cutoff - normalizedX;
+          const peakInfluence = Math.exp(-Math.pow(distanceToCutoff / 0.15, 2));
+          y = passBandY - resonance * 45 * peakInfluence;
+        } else {
+          // Stopband roll-off region
+          const distanceFromCutoff = normalizedX - cutoff;
+          const rollOff = Math.exp(-distanceFromCutoff / 0.12);
+          const peakInfluence = Math.exp(-Math.pow(distanceFromCutoff / 0.15, 2));
+          y = yBase - (yBase - peakY) * rollOff * (1 + resonance * 0.1 * peakInfluence);
+        }
+
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
 
       ctx.strokeStyle = ringColors[0];
       ctx.lineWidth = 3;
@@ -1616,6 +1666,24 @@ class ConcentricGaugeDial {
       ctx.lineTo(startX, yBase);
       ctx.fillStyle = 'var(--accent-glow)';
       ctx.fill();
+
+      // Draw interactive handle circles (dots) at vertex points
+      const vertices = [
+        { x: p1X, y: yMax },        // Attack Peak
+        { x: p2X, y: sustainY },    // Decay to Sustain
+        { x: p3X, y: sustainY },    // Sustain End
+        { x: p4X, y: yBase }        // Release End
+      ];
+
+      vertices.forEach((v, idx) => {
+        ctx.beginPath();
+        ctx.arc(v.x, v.y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#f0f4f0';
+        ctx.fill();
+        ctx.strokeStyle = ringColors[idx % ringColors.length];
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
 
     } else if (this.canvasId === 'canvas-lfo') {
       // --- 5. LFO: Live scrolling/oscillating LFO waveform ---
@@ -2593,6 +2661,13 @@ document.querySelectorAll(".waveform-selector[data-group]").forEach(group => {
     btn.classList.add("active");
     P[key] = btn.dataset.val;
     if (key === "lfoShape") lfoOsc.type = btn.dataset.val;
+    
+    // Redraw the relevant dial canvas when waveform changes
+    if (key === "waveA") {
+      const dial = window.dialInstances.find(d => d.canvasId === "canvas-oscA");
+      if (dial) dial.draw();
+    }
+    
     saveActiveState();
   });
 });

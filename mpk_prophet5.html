@@ -4,6 +4,87 @@
 <meta charset="UTF-8">
 <title>Pro-V — Concentric Arc Edition</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="ga-measurement-id" content="G-F9E7YCEYV8">
+<!-- Google tag (gtag.js) -->
+<script>
+  (function() {
+    let measurementId = null;
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlGaId = urlParams.get('ga_id');
+    if (urlGaId && /^G-[A-Z0-9]+$/i.test(urlGaId.trim())) {
+      measurementId = urlGaId.trim().toUpperCase();
+      console.log('[GA] Loaded Measurement ID from URL parameter:', measurementId);
+    }
+    if (!measurementId) {
+      try {
+        const storedGaId = localStorage.getItem('prophet_ga_measurement_id');
+        if (storedGaId && /^G-[A-Z0-9]+$/i.test(storedGaId.trim())) {
+          measurementId = storedGaId.trim().toUpperCase();
+          console.log('[GA] Loaded Measurement ID from LocalStorage:', measurementId);
+        }
+      } catch(e) {}
+    }
+    if (!measurementId) {
+      const meta = document.querySelector('meta[name="ga-measurement-id"]');
+      if (meta && meta.content && meta.content !== 'G-XXXXXXXXXX' && /^G-[A-Z0-9]+$/i.test(meta.content.trim())) {
+        measurementId = meta.content.trim().toUpperCase();
+        console.log('[GA] Loaded Measurement ID from Meta Tag:', measurementId);
+      }
+    }
+    window.GA_MEASUREMENT_ID = measurementId;
+    if (measurementId) {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=' + measurementId;
+      document.head.appendChild(script);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('config', measurementId, { 'send_page_view': true, 'cookie_flags': 'SameSite=None;Secure' });
+      console.log('[GA] Initialized Google Analytics for ID:', measurementId);
+    } else {
+      window.gtag = function(...args) {
+        console.log('%c[GA Mock Event]', 'background: #09633e; color: #dbe9a6; padding: 2px 5px; border-radius: 3px;', ...args);
+      };
+      console.log('[GA] Google Analytics ID not configured. Running in Mock Console mode.');
+    }
+  })();
+
+  function trackEvent(name, params = {}) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, params);
+      }
+    } catch (e) {
+      console.error('[GA] Error dispatching event:', e);
+    }
+  }
+
+  let lastNoteTime = 0;
+  function trackNotePlayed(source, noteName) {
+    const now = Date.now();
+    if (now - lastNoteTime > 3000) {
+      trackEvent('note_played', { source: source, note: noteName });
+      lastNoteTime = now;
+    }
+  }
+
+  const paramChangeTimers = {};
+  function trackParamChange(paramId, value, formattedValue) {
+    if (paramChangeTimers[paramId]) {
+      clearTimeout(paramChangeTimers[paramId]);
+    }
+    paramChangeTimers[paramId] = setTimeout(() => {
+      trackEvent('synth_param_change', {
+        param_id: paramId,
+        value: parseFloat(value),
+        formatted_value: formattedValue || value.toString()
+      });
+      delete paramChangeTimers[paramId];
+    }, 1500);
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -1200,6 +1281,18 @@ input[type="range"].hidden-range {
         </button>
         <div class="log-box" id="log">Aguardando conexões…</div>
       </div>
+
+      <!-- Google Analytics Tracking Settings Panel -->
+      <div class="ga-settings-panel" style="margin-top: 10px; background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color); display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1.5px; font-weight:700;">Google Analytics</span>
+          <span id="gaStatusLabel" style="font-size: 8px; font-family: var(--ff-mono); color: var(--text-muted);">MOCK CONSOLE</span>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="gaIdInput" placeholder="G-XXXXXXXXXX" style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:var(--text-primary); font-size:11px; padding:4px 8px; border-radius:4px; font-family:var(--ff-mono); outline:none;">
+          <button class="hdr-btn" id="saveGaIdBtn" style="padding: 4px 10px; font-size: 10px;">Salvar</button>
+        </div>
+      </div>
     </section>
 
   </main>
@@ -2027,6 +2120,45 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set up Preset system once DOM and dials are fully instantiated
   initPresetsSystem();
 
+  // Initialize GA Settings panel in UI
+  const gaIdInput = document.getElementById("gaIdInput");
+  const saveGaIdBtn = document.getElementById("saveGaIdBtn");
+  const gaStatusLabel = document.getElementById("gaStatusLabel");
+  
+  if (gaIdInput && saveGaIdBtn && gaStatusLabel) {
+    const currentGaId = window.GA_MEASUREMENT_ID || "";
+    gaIdInput.value = currentGaId;
+    if (currentGaId) {
+      gaStatusLabel.textContent = "CONECTADO";
+      gaStatusLabel.style.color = "var(--accent-color)";
+      gaStatusLabel.style.textShadow = "0 0 5px var(--accent-color)";
+    } else {
+      gaStatusLabel.textContent = "MOCK LOGS";
+      gaStatusLabel.style.color = "var(--text-muted)";
+      gaStatusLabel.style.textShadow = "none";
+    }
+
+    saveGaIdBtn.addEventListener("click", () => {
+      const val = gaIdInput.value.trim().toUpperCase();
+      if (val === "") {
+        try {
+          localStorage.removeItem("prophet_ga_measurement_id");
+        } catch(e) {}
+        alert("Google Analytics desativado. Recarregando a página...");
+        window.location.reload();
+      } else if (/^G-[A-Z0-9]+$/i.test(val)) {
+        try {
+          localStorage.setItem("prophet_ga_measurement_id", val);
+        } catch(e) {}
+        trackEvent('ga_id_configured', { measurement_id: val });
+        alert(`ID do Google Analytics salvo: ${val}. Recarregando a página...`);
+        window.location.reload();
+      } else {
+        alert("ID inválido! Deve estar no formato G-XXXXXXXXXX.");
+      }
+    });
+  }
+
   // Start visualizer animation loop for real-time widgets (LFO scrolling, VU Meter)
   (function startVisualizerAnimation() {
     function drawLoop() {
@@ -2114,6 +2246,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Save panel layout order
     saveLayoutState();
+    trackEvent('ui_layout_reorder', { card_id: draggedItem.id, target_card_id: targetCard.id });
   });
 })();
 
@@ -2128,6 +2261,7 @@ document.getElementById('kbToggleBtn').addEventListener('click', e => {
   try {
     localStorage.setItem("prophet_concentric_kbd_open", isOpen);
   } catch(err) {}
+  trackEvent('ui_panel_toggle', { panel_name: 'keyboard', status: isOpen ? 'open' : 'closed' });
 });
 
 document.getElementById('logToggleBtn').addEventListener('click', e => {
@@ -2138,6 +2272,7 @@ document.getElementById('logToggleBtn').addEventListener('click', e => {
   try {
     localStorage.setItem("prophet_concentric_log_open", isOpen);
   } catch(err) {}
+  trackEvent('ui_panel_toggle', { panel_name: 'midi_log', status: isOpen ? 'open' : 'closed' });
 });
 
 // Restore drawer states
@@ -2518,7 +2653,11 @@ function updatePolyBadge() {
 const noteToVoiceIds = new Map();
 
 function noteOn(note, velocity) {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().then(() => {
+      trackEvent('synth_audio_init', { source: 'note_on' });
+    });
+  }
   pulseAmp = 1.0;
 
   if (P.unisonOn) {
@@ -2644,6 +2783,7 @@ Object.keys(sliderMap).forEach(key => {
     if (key === "masterVolume") masterGain.gain.setTargetAtTime(v, audioCtx.currentTime, 0.01);
     liveUpdate(key);
     saveActiveState(); // Autosave values
+    trackParamChange(key, v, formatters[key] ? formatters[key].fmt(v) : v.toString());
   });
 });
 
@@ -2651,14 +2791,28 @@ document.getElementById("octave").addEventListener("input", e => {
   octaveShift = parseInt(e.target.value);
   document.getElementById("octaveVal").textContent = octaveShift;
   saveActiveState();
+  trackEvent('octave_changed', { octave: octaveShift });
 });
-document.getElementById("keyTrack").addEventListener("change", e => { P.keyTrack = parseFloat(e.target.value); liveUpdate("cutoff"); saveActiveState(); });
-document.getElementById("maxVoices").addEventListener("change", e => { P.maxVoices = parseInt(e.target.value); saveActiveState(); });
+document.getElementById("keyTrack").addEventListener("change", e => {
+  P.keyTrack = parseFloat(e.target.value);
+  liveUpdate("cutoff");
+  saveActiveState();
+  trackEvent('synth_toggle_change', { flag: 'keyTrack', state: parseFloat(e.target.value) });
+});
+document.getElementById("maxVoices").addEventListener("change", e => {
+  P.maxVoices = parseInt(e.target.value);
+  saveActiveState();
+  trackEvent('synth_toggle_change', { flag: 'maxVoices', state: parseInt(e.target.value) });
+});
 
 // Poly-mod checkboxes
 ['polyFE_freqA','polyFE_pw','polyFE_filter','polyOB_freqA','polyOB_pw','polyOB_filter'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('change', () => { P[id] = el.checked; saveActiveState(); });
+  if (el) el.addEventListener('change', () => {
+    P[id] = el.checked;
+    saveActiveState();
+    trackEvent('synth_toggle_change', { flag: id, state: el.checked });
+  });
 });
 
 // Waveform select
@@ -2679,6 +2833,7 @@ document.querySelectorAll(".waveform-selector[data-group]").forEach(group => {
     }
     
     saveActiveState();
+    trackEvent('synth_toggle_change', { flag: key, state: btn.dataset.val });
   });
 });
 
@@ -2689,12 +2844,18 @@ document.querySelectorAll("button[data-flag]").forEach(btn => {
     P[flag] = !P[flag];
     btn.classList.toggle("on", P[flag]);
     saveActiveState();
+    trackEvent('synth_toggle_change', { flag: flag, state: P[flag] });
   });
 });
 
 document.getElementById("testBtn").addEventListener("click", () => {
-  if (audioCtx.state === "suspended") audioCtx.resume();
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume().then(() => {
+      trackEvent('synth_audio_init', { source: 'test_button' });
+    });
+  }
   noteOn(60, 100);
+  trackNotePlayed('test_button', 'C4');
   setTimeout(() => noteOff(60), 500);
 });
 
@@ -2718,7 +2879,11 @@ function buildKeyboard() {
     key.className = "key " + (black ? "black" : "white");
     key.dataset.note = nt;
     keyboardEl.appendChild(key);
-    key.addEventListener("mousedown", () => { noteOn(nt, 100); key.classList.add("active"); });
+    key.addEventListener("mousedown", () => {
+      noteOn(nt, 100);
+      key.classList.add("active");
+      trackNotePlayed('virtual_keyboard', nt);
+    });
     key.addEventListener("mouseup", () => { noteOff(nt); key.classList.remove("active"); });
     key.addEventListener("mouseleave", () => { if (key.classList.contains("active")) { noteOff(nt); key.classList.remove("active"); } });
   });
@@ -2770,6 +2935,7 @@ function switchBank(b, skipSave = false) {
   renderCcList();
   if (!skipSave) {
     saveActiveState(); // Save current Bank focus
+    trackEvent('bank_switch', { bank_name: b });
   }
 }
 
@@ -2827,6 +2993,7 @@ async function initMIDI() {
   if (!navigator.requestMIDIAccess) {
     statusText.textContent = "MIDI não suportado";
     log("Erro: navigator.requestMIDIAccess não disponível.");
+    trackEvent('midi_connection', { status: 'not_supported' });
     return;
   }
   try {
@@ -2834,19 +3001,30 @@ async function initMIDI() {
     midiAccess = await navigator.requestMIDIAccess({ sysex: true });
     populateDevices();
     midiAccess.onstatechange = populateDevices;
-    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().then(() => {
+        trackEvent('synth_audio_init', { source: 'midi_init' });
+      });
+    }
     log("Acesso MIDI Concedido com Sysex.");
+    trackEvent('midi_connection', { status: 'success', sysex: true });
   } catch (err) {
     // Fallback if sysex is denied
     try {
       midiAccess = await navigator.requestMIDIAccess({ sysex: false });
       populateDevices();
       midiAccess.onstatechange = populateDevices;
-      if (audioCtx.state === "suspended") audioCtx.resume();
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume().then(() => {
+          trackEvent('synth_audio_init', { source: 'midi_init' });
+        });
+      }
       log("Acesso MIDI Concedido (Sysex desativado).");
+      trackEvent('midi_connection', { status: 'success', sysex: false });
     } catch (fallbackErr) {
       statusText.textContent = "Permissão Negada";
       log("Erro ao obter acesso MIDI: " + fallbackErr.message);
+      trackEvent('midi_connection', { status: 'permission_denied', error: fallbackErr.message });
     }
   }
 }
@@ -2911,6 +3089,7 @@ async function selectDevice(id) {
     dot.classList.add("on");
     statusText.textContent = currentInput.name;
     log(`Porta Ativa: ${currentInput.name} (Conexão: ${currentInput.connection}, Estado: ${currentInput.state})`);
+    trackEvent('midi_device_select', { device_name: currentInput.name });
     
     // Save last successfully selected MIDI Device
     try {
@@ -2918,6 +3097,7 @@ async function selectDevice(id) {
     } catch(e) {}
   } catch (err) {
     log("Erro ao abrir dispositivo MIDI: " + err.message);
+    trackEvent('midi_device_select_error', { device_name: currentInput.name, error: err.message });
   }
 }
 
@@ -2937,11 +3117,16 @@ function onMIDIMessage(e) {
     const hexString = Array.from(e.data).map(x => x.toString(16).toUpperCase().padStart(2, '0')).join(' ');
     log(`MIDI RX [${e.data.length}B]: ${hexString}`);
 
-    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume().then(() => {
+        trackEvent('synth_audio_init', { source: 'midi_message' });
+      });
+    }
 
     if (cmd === 0x90 && d2 > 0) {
       noteOn(d1, d2); 
       flashKey(d1, true);
+      trackNotePlayed('midi_device', d1);
     } else if (cmd === 0x80 || (cmd === 0x90 && d2 === 0)) {
       noteOff(d1); 
       flashKey(d1, false);
@@ -2952,6 +3137,7 @@ function onMIDIMessage(e) {
         return;
       }
       if (learning) {
+        const oldLearning = learning;
         ccMaps[activeBank][d1] = learning;
         try {
           localStorage.setItem("prophet_concentric_ccmaps", JSON.stringify(ccMaps));
@@ -2959,6 +3145,7 @@ function onMIDIMessage(e) {
           console.warn("Could not save ccMaps to localStorage", err);
         }
         log(`Mapeado CC ${d1} para ${learning}`);
+        trackEvent('midi_cc_mapped', { cc: d1, param_id: oldLearning, bank: activeBank });
         
         // Remove active class from buttons
         document.querySelectorAll(".learn-btn").forEach(b => b.classList.remove("active"));
@@ -2977,7 +3164,7 @@ function onMIDIMessage(e) {
       });
     }
   } catch (err) {
-    log("Erro no processamento MIDI: " + err.message);
+    log("Erro ao processar mensagem MIDI: " + err.message);
   }
 }
 
@@ -3605,17 +3792,22 @@ function initPresetsSystem() {
   select.addEventListener("change", e => {
     const val = e.target.value;
     let data = null;
+    let name = "";
+    let type = "";
     if (val.startsWith("fact_")) {
-      const name = val.replace("fact_", "");
+      name = val.replace("fact_", "");
+      type = "factory";
       data = factoryPresets[name];
       delBtn.style.display = "none";
     } else if (val.startsWith("user_")) {
-      const name = val.replace("user_", "");
+      name = val.replace("user_", "");
+      type = "user";
       data = userPresets[name];
       delBtn.style.display = "inline-block";
     }
     if (data) {
       applyPreset(data);
+      trackEvent('preset_select', { preset_name: name, preset_type: type });
     }
   });
 
@@ -3640,6 +3832,7 @@ function initPresetsSystem() {
     delBtn.style.display = "inline-block";
     log(`Preset salvo: "${cleanName}"`);
     saveActiveState();
+    trackEvent('preset_save', { preset_name: cleanName });
   });
 
   // Handle Deleting custom User Presets
@@ -3665,6 +3858,7 @@ function initPresetsSystem() {
       delBtn.style.display = "none";
       log(`Preset removido: "${name}"`);
       saveActiveState();
+      trackEvent('preset_delete', { preset_name: name });
     }
   });
 

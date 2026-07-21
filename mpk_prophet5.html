@@ -119,12 +119,16 @@ html, body {
   color: var(--text-primary);
   font-family: var(--ff-sans);
   min-height: 100vh;
-  padding: 12px;
+  padding: 12px 12px 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
   user-select: none;
   width: 100%;
+  transition: padding-bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+body.keyboard-open {
+  padding-bottom: 220px;
 }
 
 /* =============================================
@@ -759,23 +763,41 @@ input[type="range"].hidden-range {
    VIRTUAL KEYBOARD PANEL (Relocated drawer)
    ============================================= */
 .keyboard-section {
-  width: 100%;
-  margin-top: 16px;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 24px);
+  max-width: 1200px;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-sizing: border-box;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.keyboard-section.open {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 10px;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  padding: 10px 16px;
 }
 .kb-hdr-btn {
   background: var(--bg-input);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
   padding: 6px 14px;
   font-family: var(--ff-mono);
   font-size: 10px;
@@ -784,6 +806,7 @@ input[type="range"].hidden-range {
   text-transform: uppercase;
   transition: all 0.1s;
   width: fit-content;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
 }
 .kb-hdr-btn:hover {
   background: var(--accent-color);
@@ -1944,7 +1967,7 @@ class ConcentricGaugeDial {
         </div>
       `;
 
-      // Wheel scroll adjustments over parameter names + values
+            // Wheel scroll adjustments over parameter names + values
       row.addEventListener('wheel', e => {
         const input = this.inputs[index];
         if (!input) return;
@@ -1959,6 +1982,91 @@ class ConcentricGaugeDial {
         input.value = Math.max(min, Math.min(max, newVal));
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }, { passive: false });
+
+      // Touch swipe/drag adjustments over parameter rows for mobile support
+      let rowTouchStartX = 0;
+      let rowTouchStartY = 0;
+      let rowTouchStartVal = 0;
+      let isRowDragging = false;
+      let hasDeterminedDirection = false;
+      let isHorizontalDrag = false;
+
+      row.addEventListener('touchstart', e => {
+        if (e.target.classList.contains('learn-btn') || e.target.closest('.learn-btn')) return;
+        const input = this.inputs[index];
+        if (!input) return;
+
+        rowTouchStartX = e.touches[0].clientX;
+        rowTouchStartY = e.touches[0].clientY;
+        rowTouchStartVal = parseFloat(input.value);
+        isRowDragging = true;
+        hasDeterminedDirection = false;
+        isHorizontalDrag = false;
+
+        // Highlight active row visual feedback
+        document.querySelectorAll('.legend-row').forEach(r => r.classList.remove('active-row'));
+        row.classList.add('active-row');
+      }, { passive: true });
+
+      row.addEventListener('touchmove', e => {
+        if (!isRowDragging) return;
+        const input = this.inputs[index];
+        if (!input) return;
+
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const deltaX = currentX - rowTouchStartX;
+        const deltaY = currentY - rowTouchStartY;
+
+        if (!hasDeterminedDirection) {
+          const absX = Math.abs(deltaX);
+          const absY = Math.abs(deltaY);
+          if (absX > 5 || absY > 5) {
+            hasDeterminedDirection = true;
+            if (absX > absY) {
+              isHorizontalDrag = true;
+            } else {
+              isHorizontalDrag = false;
+              isRowDragging = false;
+              row.classList.remove('active-row');
+            }
+          }
+          return;
+        }
+
+        if (isHorizontalDrag) {
+          const swipeRange = 180;
+          const min = parseFloat(input.min);
+          const max = parseFloat(input.max);
+          const step = parseFloat(input.step) || 0.01;
+
+          const deltaVal = (deltaX / swipeRange) * (max - min);
+          let newVal = rowTouchStartVal + deltaVal;
+
+          newVal = Math.max(min, Math.min(max, newVal));
+          newVal = Math.round(newVal / step) * step;
+          newVal = parseFloat(newVal.toFixed(4));
+
+          input.value = newVal;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+
+          if (e.cancelable) e.preventDefault();
+        }
+      }, { passive: false });
+
+      row.addEventListener('touchend', () => {
+        if (isRowDragging) {
+          isRowDragging = false;
+          row.classList.remove('active-row');
+        }
+      });
+
+      row.addEventListener('touchcancel', () => {
+        if (isRowDragging) {
+          isRowDragging = false;
+          row.classList.remove('active-row');
+        }
+      });
 
       this.legendContainer.appendChild(row);
       this.updateLegendRow(index);
@@ -2255,9 +2363,17 @@ window.addEventListener('DOMContentLoaded', () => {
 // ================================================================
 document.getElementById('kbToggleBtn').addEventListener('click', e => {
   const dr = document.getElementById('kbDrawer');
+  const section = document.querySelector('.keyboard-section');
   dr.classList.toggle('open');
   const isOpen = dr.classList.contains('open');
   e.target.textContent = isOpen ? '▼ KEYBOARD' : '▲ KEYBOARD';
+  if (isOpen) {
+    if (section) section.classList.add('open');
+    document.body.classList.add('keyboard-open');
+  } else {
+    if (section) section.classList.remove('open');
+    document.body.classList.remove('keyboard-open');
+  }
   try {
     localStorage.setItem("prophet_concentric_kbd_open", isOpen);
   } catch(err) {}
@@ -2280,8 +2396,11 @@ try {
   const kbdOpen = localStorage.getItem("prophet_concentric_kbd_open") === "true";
   const dr = document.getElementById('kbDrawer');
   const kbBtn = document.getElementById('kbToggleBtn');
+  const section = document.querySelector('.keyboard-section');
   if (kbdOpen && dr && kbBtn) {
     dr.classList.add('open');
+    if (section) section.classList.add('open');
+    document.body.classList.add('keyboard-open');
     kbBtn.textContent = '▼ KEYBOARD';
   }
 
@@ -2879,13 +2998,35 @@ function buildKeyboard() {
     key.className = "key " + (black ? "black" : "white");
     key.dataset.note = nt;
     keyboardEl.appendChild(key);
-    key.addEventListener("mousedown", () => {
+    const handlePress = (e) => {
+      if (e) e.preventDefault();
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
       noteOn(nt, 100);
       key.classList.add("active");
       trackNotePlayed('virtual_keyboard', nt);
+    };
+
+    const handleRelease = (e) => {
+      if (e) e.preventDefault();
+      noteOff(nt);
+      key.classList.remove("active");
+    };
+
+    // Touch events for mobile (instant response, no 300ms delay)
+    key.addEventListener("touchstart", handlePress, { passive: false });
+    key.addEventListener("touchend", handleRelease, { passive: false });
+
+    // Mouse events for desktop
+    key.addEventListener("mousedown", handlePress);
+    key.addEventListener("mouseup", handleRelease);
+    key.addEventListener("mouseleave", () => {
+      if (key.classList.contains("active")) {
+        noteOff(nt);
+        key.classList.remove("active");
+      }
     });
-    key.addEventListener("mouseup", () => { noteOff(nt); key.classList.remove("active"); });
-    key.addEventListener("mouseleave", () => { if (key.classList.contains("active")) { noteOff(nt); key.classList.remove("active"); } });
   });
 }
 buildKeyboard();

@@ -1305,17 +1305,6 @@ input[type="range"].hidden-range {
         <div class="log-box" id="log">Aguardando conexões…</div>
       </div>
 
-      <!-- Google Analytics Tracking Settings Panel -->
-      <div class="ga-settings-panel" style="margin-top: 10px; background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color); display:flex; flex-direction:column; gap:6px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size: 9px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 1.5px; font-weight:700;">Google Analytics</span>
-          <span id="gaStatusLabel" style="font-size: 8px; font-family: var(--ff-mono); color: var(--text-muted);">MOCK CONSOLE</span>
-        </div>
-        <div style="display:flex; gap:6px;">
-          <input type="text" id="gaIdInput" placeholder="G-XXXXXXXXXX" style="flex:1; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:var(--text-primary); font-size:11px; padding:4px 8px; border-radius:4px; font-family:var(--ff-mono); outline:none;">
-          <button class="hdr-btn" id="saveGaIdBtn" style="padding: 4px 10px; font-size: 10px;">Salvar</button>
-        </div>
-      </div>
     </section>
 
   </main>
@@ -2228,44 +2217,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set up Preset system once DOM and dials are fully instantiated
   initPresetsSystem();
 
-  // Initialize GA Settings panel in UI
-  const gaIdInput = document.getElementById("gaIdInput");
-  const saveGaIdBtn = document.getElementById("saveGaIdBtn");
-  const gaStatusLabel = document.getElementById("gaStatusLabel");
-  
-  if (gaIdInput && saveGaIdBtn && gaStatusLabel) {
-    const currentGaId = window.GA_MEASUREMENT_ID || "";
-    gaIdInput.value = currentGaId;
-    if (currentGaId) {
-      gaStatusLabel.textContent = "CONECTADO";
-      gaStatusLabel.style.color = "var(--accent-color)";
-      gaStatusLabel.style.textShadow = "0 0 5px var(--accent-color)";
-    } else {
-      gaStatusLabel.textContent = "MOCK LOGS";
-      gaStatusLabel.style.color = "var(--text-muted)";
-      gaStatusLabel.style.textShadow = "none";
-    }
 
-    saveGaIdBtn.addEventListener("click", () => {
-      const val = gaIdInput.value.trim().toUpperCase();
-      if (val === "") {
-        try {
-          localStorage.removeItem("prophet_ga_measurement_id");
-        } catch(e) {}
-        alert("Google Analytics desativado. Recarregando a página...");
-        window.location.reload();
-      } else if (/^G-[A-Z0-9]+$/i.test(val)) {
-        try {
-          localStorage.setItem("prophet_ga_measurement_id", val);
-        } catch(e) {}
-        trackEvent('ga_id_configured', { measurement_id: val });
-        alert(`ID do Google Analytics salvo: ${val}. Recarregando a página...`);
-        window.location.reload();
-      } else {
-        alert("ID inválido! Deve estar no formato G-XXXXXXXXXX.");
-      }
-    });
-  }
 
   // Start visualizer animation loop for real-time widgets (LFO scrolling, VU Meter)
   (function startVisualizerAnimation() {

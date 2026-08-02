@@ -49,9 +49,7 @@ Auth uses a dedicated GCP service account (`github-deployer`) scoped to just thi
 
 ## Analytics (optional)
 
-If you fork this and want your own usage analytics, `setup-analytics.js` is a one-shot local script that authenticates via `gcloud auth login --update-no-cache --scopes=...,https://www.googleapis.com/auth/analytics`, creates a GA4 property + web stream, and writes the resulting Measurement ID into the `<meta name="ga-measurement-id">` tag in `index.html`. Run it with `node setup-analytics.js`. Nothing is sent anywhere until that meta tag has a real ID.
-
-The page also accepts a Measurement ID via `?ga_id=` query param or `localStorage`, which override the meta tag — handy for testing a different property without editing the file, but be aware anyone can point your session's events elsewhere by sharing a link with that param.
+If you fork this and want your own usage analytics, `setup-analytics.js` is a one-shot local script that authenticates via `gcloud auth login --update-no-cache --scopes=...,https://www.googleapis.com/auth/analytics`, creates a GA4 property + web stream, and writes the resulting Measurement ID into the `<meta name="ga-measurement-id">` tag in `index.html`. Run it with `node setup-analytics.js`. Nothing is sent anywhere until that meta tag has a real ID — the ID is only ever read from that tag, no query-param or `localStorage` override.
 
 ## Contributing
 

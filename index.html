@@ -9,27 +9,10 @@
 <script>
   (function() {
     let measurementId = null;
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlGaId = urlParams.get('ga_id');
-    if (urlGaId && /^G-[A-Z0-9]+$/i.test(urlGaId.trim())) {
-      measurementId = urlGaId.trim().toUpperCase();
-      console.log('[GA] Loaded Measurement ID from URL parameter:', measurementId);
-    }
-    if (!measurementId) {
-      try {
-        const storedGaId = localStorage.getItem('prophet_ga_measurement_id');
-        if (storedGaId && /^G-[A-Z0-9]+$/i.test(storedGaId.trim())) {
-          measurementId = storedGaId.trim().toUpperCase();
-          console.log('[GA] Loaded Measurement ID from LocalStorage:', measurementId);
-        }
-      } catch(e) {}
-    }
-    if (!measurementId) {
-      const meta = document.querySelector('meta[name="ga-measurement-id"]');
-      if (meta && meta.content && meta.content !== 'G-XXXXXXXXXX' && /^G-[A-Z0-9]+$/i.test(meta.content.trim())) {
-        measurementId = meta.content.trim().toUpperCase();
-        console.log('[GA] Loaded Measurement ID from Meta Tag:', measurementId);
-      }
+    const meta = document.querySelector('meta[name="ga-measurement-id"]');
+    if (meta && meta.content && meta.content !== 'G-XXXXXXXXXX' && /^G-[A-Z0-9]+$/i.test(meta.content.trim())) {
+      measurementId = meta.content.trim().toUpperCase();
+      console.log('[GA] Loaded Measurement ID from Meta Tag:', measurementId);
     }
     window.GA_MEASUREMENT_ID = measurementId;
     if (measurementId) {

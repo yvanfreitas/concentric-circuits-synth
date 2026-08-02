@@ -197,9 +197,9 @@ async function run() {
     return;
   }
 
-  logInfo("Atualizando arquivo mpk_prophet5.html com o novo ID...");
+  logInfo("Atualizando arquivo index.html com o novo ID...");
 
-  const htmlPath = path.join(__dirname, 'mpk_prophet5.html');
+  const htmlPath = path.join(__dirname, 'index.html');
   try {
     let htmlContent = fs.readFileSync(htmlPath, 'utf8');
     
@@ -208,7 +208,7 @@ async function run() {
     if (metaRegex.test(htmlContent)) {
       htmlContent = htmlContent.replace(metaRegex, `$1${measurementId}$2`);
       fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-      logSuccess(`Sucesso! mpk_prophet5.html atualizado com o ID: ${measurementId}`);
+      logSuccess(`Sucesso! index.html atualizado com o ID: ${measurementId}`);
       console.log(`\nAgora, quando você rodar o sintetizador ou subir no Cloud Run, os eventos serão computados na sua propriedade.`);
     } else {
       logError("Meta tag 'ga-measurement-id' não encontrada no arquivo HTML!");

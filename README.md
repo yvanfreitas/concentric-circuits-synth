@@ -2,7 +2,7 @@
 
 Browser synthesizer modeled after the Sequential Prophet-5 / Oberheim OB-Xa lineage, built for the Akai MPK Mini MK3. Single HTML file, no build step, no framework — vanilla JS and the Web Audio API.
 
-Live: https://mpk-prophet5-synth-zruulhtwoa-uc.a.run.app
+Live: https://midi-synth.ew.codes — also reachable at the raw Cloud Run URL, https://mpk-prophet5-synth-zruulhtwoa-uc.a.run.app
 
 ## Features
 
@@ -46,6 +46,23 @@ Connect a MIDI controller before loading the page (browsers only enumerate devic
 `Dockerfile` + `nginx.conf` package `index.html` behind nginx, listening on Cloud Run's `$PORT`. `.github/workflows/deploy.yml` deploys to Cloud Run automatically on every push to `master` via `gcloud run deploy --source .`. Production tracks `master` — there's no separate staging step, so land changes there only when they're ready to ship.
 
 Auth uses a dedicated GCP service account (`github-deployer`) scoped to just this project, holding only the roles needed to build and deploy (`run.admin`, `iam.serviceAccountUser`, `cloudbuild.builds.editor`, `artifactregistry.writer`, `storage.admin`). Its key lives only as the `GCP_SA_KEY` GitHub Actions secret.
+
+### Custom domain
+
+The service is served at `midi-synth.ew.codes` through a **Cloud Run domain mapping** (`us-central1`), not a load balancer:
+
+```bash
+gcloud beta run domain-mappings create \
+  --service mpk-prophet5-synth \
+  --domain midi-synth.ew.codes \
+  --region us-central1 \
+  --project synth-prophet5-82941
+```
+
+DNS is a single `CNAME` at GoDaddy: `midi-synth` → `ghs.googlehosted.com.` `ew.codes` is already verified for the account, and Google issues/renews the TLS certificate automatically (issuance takes ~15 minutes, though the cert can take a while to roll out to every edge). Mappings are attached to the *service*, so redeploying revisions does not disturb the domain.
+
+Two caveats worth knowing: domain mappings are a **Preview** feature that Google [does not recommend for production](https://docs.cloud.google.com/run/docs/mapping-custom-domains) (it points to a global external Application Load Balancer instead), and TLS 1.0/1.1 cannot be disabled on a mapping. For a single-file hobby synth behind no auth, neither matters.
+
 
 ## Analytics (optional)
 

@@ -21,7 +21,8 @@ Modules occupy ordinary cells in `.modular-grid`, with the same padding, border 
 - Module: existing `.module-card`, `.module-header`, `.module-title` and `.module-subtitle` primitives.
 - Add action: a discreet `+ Module` selector in the existing header, grouped into synth modules and effects. Active modules are disabled in its options.
 - Effect module: actual `ConcentricGaugeDial`, shared legend with scroll/touch adjustment and MIDI Learn, existing bypass toggle treatment, discreet remove icon in the header. No ordering buttons or nested cards.
-- Optional synth modules: Oscillator B, Glide & Unison, Lowpass Filter, Filter Envelope, LFO, Poly-Mod, Wheel Mod and MIDI Manager. Their existing cards retain state while detached and expose the same discreet remove icon.
+- Optional synth modules: Oscillator B, Glide & Unison, Lowpass Filter, Filter Envelope, LFO, Poly-Mod, Wheel Mod, MIDI Manager, MIDI Bindings and MIDI Monitor Log. Their existing cards retain state while detached and expose the same discreet remove icon.
+- MIDI responsibilities: MIDI Manager owns connection and device selection; MIDI Bindings owns banks and the live learned CC map; MIDI Monitor Log owns the always-visible incoming event stream. Learning through any `LRN` button updates the bindings module immediately.
 - Adaptive routes: removing a source/destination also removes its active audio route and hides dependent Mixer, LFO, Poly-Mod and Wheel Mod controls. Wheel Mod is visibly unavailable without the LFO.
 - Empty rack: no extra panel; the header selector remains available. Removal returns focus there.
 

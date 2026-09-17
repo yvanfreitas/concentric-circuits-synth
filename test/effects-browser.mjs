@@ -68,6 +68,9 @@ async function run() {
   await command("Runtime.enable"); await command("Page.enable");
   await load(url);
   await check("initiallyDry", "effectRack.serialize().modules.length === 0");
+  await check("midiModulesSeparated", "!!document.getElementById('mod-midi') && !!document.getElementById('mod-midi-bindings') && !!document.getElementById('mod-midi-monitor') && !document.querySelector('#mod-midi #ccList') && !document.querySelector('#mod-midi #log')");
+  await evaluate(`document.querySelector('#row-resonance .learn-btn').click(); onMIDIMessage({data:new Uint8Array([0xB0,1,99])});`);
+  await check("learnUpdatesBindings", "ccMaps[activeBank][1] === 'resonance' && document.querySelector('#ccList [data-cc=\"1\"]')?.textContent.includes('Reson.') && document.getElementById('log').textContent.includes('Mapped CC 1 to resonance')");
   evidence.signal = await evaluate(`(async () => {
     const result = {};
     for (const type of Object.keys(EFFECT_DEFINITIONS)) {
@@ -111,6 +114,9 @@ async function run() {
   await check("wheelAdaptsToLfo", "!isModuleActive('mod-lfo') && synthModuleCards.get('mod-wheelmod').classList.contains('module-unavailable')");
   await evaluate(`for (const id of ['mod-oscB','mod-lfo']) { const add=document.getElementById('addEffect'); add.value=id; add.dispatchEvent(new Event('change')); }`);
   await check("modulesReadded", "isModuleActive('mod-oscB') && isModuleActive('mod-lfo') && !!document.getElementById('mod-oscB') && !document.getElementById('row-mixB').hidden");
+  await evaluate(`localStorage.setItem('prophet_concentric_layout_order', JSON.stringify([...document.querySelectorAll('#mainGrid > .module-card')].map(card => card.id).filter(id => !['mod-midi-bindings','mod-midi-monitor'].includes(id))))`);
+  await load(url + "?legacy-layout=1");
+  await check("legacyMidiLayoutMigrated", "(() => { const ids=[...document.querySelectorAll('#mainGrid > .module-card')].map(card=>card.id), midi=ids.indexOf('mod-midi'); return ids[midi+1] === 'mod-midi-bindings' && ids[midi+2] === 'mod-midi-monitor'; })()");
   const expected = await snapshot();
   await evaluate("window.prompt = () => 'Rack QA'; document.getElementById('savePresetBtn').click()");
   await load(url + "?restore=1");

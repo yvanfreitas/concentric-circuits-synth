@@ -747,6 +747,7 @@ input[type="range"].hidden-range {
   transition: color 0.2s;
 }
 .log-box.open { display: block; }
+.midi-monitor .log-box { display: block; height: 160px; margin-top: 0; }
 
 /* =============================================
    VIRTUAL KEYBOARD PANEL (Relocated drawer)
@@ -1281,12 +1282,11 @@ input[type="range"].hidden-range {
       <input type="range" class="hidden-range" id="masterTune" min="-100" max="100" value="0" step="1">
     </section>
 
-    <!-- MIDI SETTINGS & LOG (NEW Dedicated Console Card) -->
     <section class="module-card" draggable="true" id="mod-midi">
       <div class="drag-handle"></div>
       <div class="module-header">
         <h2 class="module-title">MIDI Manager</h2>
-        <span class="module-subtitle">CC Map & Monitor</span>
+        <span class="module-subtitle">Connection & Devices</span>
       </div>
 
       <!-- Relocated Connection panel -->
@@ -1301,22 +1301,30 @@ input[type="range"].hidden-range {
           <span class="midi-text" id="statusText" style="font-size:10px; color: var(--text-primary);">MIDI Disconnected</span>
         </div>
       </div>
+    </section>
 
-      <div class="midi-bank-section" style="margin-top: 10px;">
+    <section class="module-card" draggable="true" id="mod-midi-bindings">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">MIDI Bindings</h2>
+        <span class="module-subtitle">Learned CC Map</span>
+      </div>
+      <div class="midi-bank-section">
         <div class="midi-bank-header">
           <button id="bankA" class="active" data-bank="A">Bank A</button>
           <button id="bankB" data-bank="B">Bank B</button>
         </div>
         <div class="cc-list" id="ccList"></div>
       </div>
+    </section>
 
-      <div class="log-collapsible" style="margin-top: 4px;">
-        <button class="log-toggle-btn" id="logToggleBtn">
-          <span>▶</span> MIDI Monitor Log
-        </button>
-        <div class="log-box" id="log">Waiting for connections…</div>
+    <section class="module-card midi-monitor" draggable="true" id="mod-midi-monitor">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">MIDI Monitor Log</h2>
+        <span class="module-subtitle">Incoming Events</span>
       </div>
-
+      <div class="log-box" id="log" role="log" aria-live="polite">Waiting for connections…</div>
     </section>
 
   </main>
@@ -1350,7 +1358,8 @@ function saveActiveState() {
     activeBank: typeof activeBank !== "undefined" ? activeBank : "A",
     selectedPreset: select ? select.value : null,
     effects: effectRack.serialize(),
-    modules: getActiveSynthModules()
+    modules: getActiveSynthModules(),
+    modulesVersion: 2
   };
   try {
     localStorage.setItem("prophet_concentric_active_state", JSON.stringify(state));
@@ -1376,6 +1385,11 @@ function restoreLayoutState() {
     const stored = localStorage.getItem("prophet_concentric_layout_order");
     if (stored) {
       const order = JSON.parse(stored);
+      const midiIndex = order.indexOf("mod-midi");
+      if (midiIndex >= 0) {
+        const additions = ["mod-midi-bindings", "mod-midi-monitor"].filter(id => !order.includes(id));
+        order.splice(midiIndex + 1, 0, ...additions);
+      }
       const grid = document.getElementById('mainGrid');
       order.forEach(id => {
         const el = document.getElementById(id);
@@ -2367,17 +2381,6 @@ document.getElementById('kbToggleBtn').addEventListener('click', e => {
   trackEvent('ui_panel_toggle', { panel_name: 'keyboard', status: isOpen ? 'open' : 'closed' });
 });
 
-document.getElementById('logToggleBtn').addEventListener('click', e => {
-  const box = document.getElementById('log');
-  box.classList.toggle('open');
-  const isOpen = box.classList.contains('open');
-  e.target.querySelector('span').textContent = isOpen ? '▼' : '▶';
-  try {
-    localStorage.setItem("prophet_concentric_log_open", isOpen);
-  } catch(err) {}
-  trackEvent('ui_panel_toggle', { panel_name: 'midi_log', status: isOpen ? 'open' : 'closed' });
-});
-
 // Restore drawer states
 try {
   const kbdOpen = localStorage.getItem("prophet_concentric_kbd_open") === "true";
@@ -2389,14 +2392,6 @@ try {
     if (section) section.classList.add('open');
     document.body.classList.add('keyboard-open');
     kbBtn.textContent = '▼ KEYBOARD';
-  }
-
-  const logOpen = localStorage.getItem("prophet_concentric_log_open") === "true";
-  const box = document.getElementById('log');
-  const logBtn = document.getElementById('logToggleBtn');
-  if (logOpen && box && logBtn) {
-    box.classList.add('open');
-    logBtn.querySelector('span').textContent = '▼';
   }
 } catch(e) {}
 
@@ -2448,12 +2443,18 @@ const SYNTH_MODULES = {
   "mod-lfo": "LFO",
   "mod-polymod": "Poly-Mod",
   "mod-wheelmod": "Wheel Mod",
-  "mod-midi": "MIDI Manager"
+  "mod-midi": "MIDI Manager",
+  "mod-midi-bindings": "MIDI Bindings",
+  "mod-midi-monitor": "MIDI Monitor Log"
 };
 const activeSynthModules = new Set(Object.keys(SYNTH_MODULES));
 const synthModuleCards = new Map();
 function isModuleActive(id) { return !Object.hasOwn(SYNTH_MODULES, id) || activeSynthModules.has(id); }
 function getActiveSynthModules() { return [...activeSynthModules]; }
+function migrateModuleSelection(ids, version) {
+  if (version === 2 || !Array.isArray(ids)) return ids;
+  return [...new Set([...ids, "mod-midi-bindings", "mod-midi-monitor"])];
+}
 
 function syncModuleDependencies() {
   const oscB = isModuleActive("mod-oscB"), filter = isModuleActive("mod-filter");
@@ -2494,6 +2495,7 @@ function setSynthModules(ids, save = true) {
   }
   activeSynthModules.clear(); next.forEach(id => activeSynthModules.add(id));
   syncModuleDependencies();
+  renderCcList();
   if (save) { allNotesOff(); saveLayoutState(); saveActiveState(); }
 }
 
@@ -3565,12 +3567,12 @@ try {
 let activeBank = "A";
 let learning = null;
 
-// Render CC list table inside MIDI Manager card
 function renderCcList() {
-  const el = document.getElementById("ccList");
+  const el = document.getElementById("ccList") || synthModuleCards.get("mod-midi-bindings")?.querySelector("#ccList");
+  if (!el) return;
   const map = ccMaps[activeBank];
-  el.innerHTML = Object.entries(map)
-    .map(([cc, param]) => `<div><b>K${cc}</b> → ${param || "<i>free</i>"}</div>`)
+  el.innerHTML = Object.entries(map).sort(([left], [right]) => Number(left) - Number(right))
+    .map(([cc, param]) => `<div data-cc="${cc}"><b>CC ${cc}</b> → ${formatters[param]?.label || param || "<i>free</i>"}</div>`)
     .join("");
 }
 renderCcList();
@@ -3780,11 +3782,6 @@ function onMIDIMessage(e) {
       noteOff(d1); 
       flashKey(d1, false);
     } else if (cmd === 0xB0) {
-      if (d1 === 1) {
-        modWheelValue = d2;
-        liveUpdate("modWheel");
-        return;
-      }
       if (learning) {
         const oldLearning = learning;
         ccMaps[activeBank][d1] = learning;
@@ -3793,13 +3790,18 @@ function onMIDIMessage(e) {
         } catch(err) {
           console.warn("Could not save ccMaps to localStorage", err);
         }
-        log(`Mapeado CC ${d1} para ${learning}`);
+        log(`Mapped CC ${d1} to ${learning}`);
         trackEvent('midi_cc_mapped', { cc: d1, param_id: oldLearning, bank: activeBank });
         
         // Remove active class from buttons
         document.querySelectorAll(".learn-btn").forEach(b => b.classList.remove("active"));
         learning = null;
         renderCcList();
+        return;
+      }
+      if (d1 === 1) {
+        modWheelValue = d2;
+        liveUpdate("modWheel");
         return;
       }
       applyCC(d1, d2);
@@ -4683,7 +4685,7 @@ function initPresetsSystem() {
       if (type === "user") {
         effectRack.replace(data.effects);
         window.renderEffects();
-        if (Array.isArray(data.modules)) setSynthModules(data.modules, false);
+        if (Array.isArray(data.modules)) setSynthModules(migrateModuleSelection(data.modules, data.modulesVersion), false);
       }
       const { effects, modules, ...parameters } = data;
       applyPreset(parameters);
@@ -4698,7 +4700,7 @@ function initPresetsSystem() {
     const cleanName = name.trim();
 
     // Clone parameter state and append visual octave shift
-    const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules() };
+    const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 2 };
     userPresets[cleanName] = presetData;
     
     try {
@@ -4757,7 +4759,7 @@ function initPresetsSystem() {
   }
 
   if (loadedState && loadedState.P) {
-    setSynthModules(loadedState.modules, false);
+    setSynthModules(migrateModuleSelection(loadedState.modules, loadedState.modulesVersion), false);
     effectRack.replace(loadedState.effects);
     window.renderEffects();
     // Restore Bank

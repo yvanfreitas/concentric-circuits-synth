@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Pro-V — Concentric Arc Edition</title>
@@ -292,7 +292,7 @@ select#presetSelect optgroup {
    ============================================= */
 .modular-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
   gap: 16px;
   width: 100%;
 }
@@ -310,7 +310,13 @@ select#presetSelect optgroup {
   cursor: default;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  min-width: 0;
 }
+.module-title, .module-subtitle, .legend-name, .midi-text { overflow-wrap: anywhere; }
+.module-header > * { min-width: 0; }
+.module-card.module-unavailable .concentric-layout-row,
+.module-card.module-unavailable .toggles-group { opacity: .35; pointer-events: none; }
+.dependency-hidden { display: none !important; }
 .module-card.dragging {
   opacity: 0.5;
   transform: scale(0.98) rotate(0.5deg);
@@ -875,6 +881,25 @@ input[type="range"].hidden-range {
   text-align: center;
   margin-top: 4px;
 }
+.effect-heading { display: flex; align-items: center; gap: 8px; }
+.effect-remove { display: grid; place-items: center; width: 28px; height: 28px; padding: 4px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
+.effect-remove:hover { color: var(--text-primary); background: var(--bg-input); border-radius: 4px; }
+.effect-remove svg { width: 14px; height: 14px; }
+.effect-module .toggles-group { margin-top: auto; }
+.effect-module :focus-visible, #addEffect:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+#addEffect { max-width: 170px; }
+#addEffect option, #addEffect optgroup { background: var(--bg-main); color: var(--text-primary); }
+.drag-handle { touch-action: none; }
+@media (max-width: 420px) {
+  .synth-chassis { padding: 8px; }
+  .module-card { padding-inline: 12px; }
+  .concentric-layout-row { gap: 8px; }
+  .concentric-canvas-container, .concentric-canvas { width: 112px; height: 112px; }
+  .concentric-legend, .legend-left, .legend-right { min-width: 0; }
+  .legend-left, .legend-right { gap: 4px; }
+  .legend-value { min-width: 0; }
+  .learn-btn { padding-inline: 4px; }
+}
 </style>
 </head>
 <body>
@@ -896,9 +921,13 @@ input[type="range"].hidden-range {
       <select id="presetSelect">
         <!-- Populated via Javascript -->
       </select>
-      <button class="hdr-btn" id="savePresetBtn" style="padding: 5px 10px; font-size: 11px;">Salvar</button>
-      <button class="hdr-btn" id="deletePresetBtn" style="padding: 5px 10px; font-size: 11px; display:none; color: var(--led-red); border-color: var(--led-red-dim);">Apagar</button>
+      <button class="hdr-btn" id="savePresetBtn" style="padding: 5px 10px; font-size: 11px;">Save</button>
+      <button class="hdr-btn" id="deletePresetBtn" style="padding: 5px 10px; font-size: 11px; display:none; color: var(--led-red); border-color: var(--led-red-dim);">Delete</button>
     </div>
+
+    <select class="hdr-btn" id="addEffect" aria-label="Add module">
+      <option value="">+ Module</option>
+    </select>
 
     <div class="voices-indicator">
       <span class="voices-label">Voices Active</span>
@@ -915,7 +944,7 @@ input[type="range"].hidden-range {
     </div>
 
     <div class="hdr-controls" style="display: none;">
-      <span class="hdr-btn" id="polyBadge" style="cursor:default;">0 vozes</span>
+      <span class="hdr-btn" id="polyBadge" style="cursor:default;">0 voices</span>
     </div>
   </header>
 
@@ -997,7 +1026,7 @@ input[type="range"].hidden-range {
       </div>
       <div class="toggles-group">
         <button class="button-toggle" id="oscBLowFreq" data-flag="oscBLowFreq">Low Freq</button>
-        <button class="button-toggle" id="oscBSync" data-flag="oscBSync">Sync A↔B</button>
+        <button class="button-toggle" id="oscBSync" data-flag="oscBSync" title="Osc A resets Osc B phase. Applies to the next note.">Sync A→B</button>
       </div>
       <input type="range" class="hidden-range" id="pwB" min="0.05" max="0.95" value="0.5" step="0.01">
       <input type="range" class="hidden-range" id="oscBCoarse" min="-24" max="24" value="0" step="1">
@@ -1175,12 +1204,12 @@ input[type="range"].hidden-range {
       <div class="poly-matrix-container">
         <table class="poly-matrix">
           <thead>
-            <tr>
+            <tr data-source="filter-envelope">
               <th>Source</th><th>Osc A Freq</th><th>Osc A PW</th><th>Filter</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr data-source="osc-b">
               <td>Filt Env</td>
               <td><input type="checkbox" id="polyFE_freqA"></td>
               <td><input type="checkbox" id="polyFE_pw"></td>
@@ -1263,13 +1292,13 @@ input[type="range"].hidden-range {
       <!-- Relocated Connection panel -->
       <div class="midi-connection-panel" style="display:flex; flex-direction:column; gap:8px; background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-          <button class="hdr-btn" id="connectBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Conectar MIDI</button>
+          <button class="hdr-btn" id="connectBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Connect MIDI</button>
           <button class="hdr-btn" id="testBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Test C4</button>
         </div>
-        <select id="deviceSelect" style="width:100%;"><option>Aguardando...</option></select>
+        <select id="deviceSelect" style="width:100%;"><option>Waiting...</option></select>
         <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
           <div class="midi-dot" id="dot"></div>
-          <span class="midi-text" id="statusText" style="font-size:10px; color: var(--text-primary);">MIDI Desconectado</span>
+          <span class="midi-text" id="statusText" style="font-size:10px; color: var(--text-primary);">MIDI Disconnected</span>
         </div>
       </div>
 
@@ -1285,7 +1314,7 @@ input[type="range"].hidden-range {
         <button class="log-toggle-btn" id="logToggleBtn">
           <span>▶</span> MIDI Monitor Log
         </button>
-        <div class="log-box" id="log">Aguardando conexões…</div>
+        <div class="log-box" id="log">Waiting for connections…</div>
       </div>
 
     </section>
@@ -1319,7 +1348,9 @@ function saveActiveState() {
     P: { ...P },
     octaveShift: octaveShift,
     activeBank: typeof activeBank !== "undefined" ? activeBank : "A",
-    selectedPreset: select ? select.value : null
+    selectedPreset: select ? select.value : null,
+    effects: effectRack.serialize(),
+    modules: getActiveSynthModules()
   };
   try {
     localStorage.setItem("prophet_concentric_active_state", JSON.stringify(state));
@@ -1465,9 +1496,9 @@ class ConcentricGaugeDial {
     if (!this.canvas) return;
 
     this.ctx = this.canvas.getContext('2d');
-    this.paramIds = paramIds;
-    this.inputs = paramIds.map(id => document.getElementById(id));
-    this.numRings = paramIds.length;
+    this.paramIds = [];
+    this.inputs = [];
+    this.numRings = 0;
 
     this.centerX = 75;
     this.centerY = 75;
@@ -1475,12 +1506,11 @@ class ConcentricGaugeDial {
     
     // Rings radii spacing (starts outermost)
     this.radii = [];
-    for (let i = 0; i < this.numRings; i++) {
-      this.radii.push(63 - i * 11);
-    }
 
     this.activeRingIndex = -1;
     this.isDragging = false;
+    this.events = new AbortController();
+    this.parameterEvents = new AbortController();
 
     // High DPI Support
     const rect = this.canvas.getBoundingClientRect();
@@ -1488,21 +1518,33 @@ class ConcentricGaugeDial {
     this.canvas.height = rect.height * window.devicePixelRatio;
     this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-    this.buildLegend();
+    this.setParamIds(paramIds);
     this.initEvents();
-    this.draw();
-
-    this.inputs.forEach((input, index) => {
-      if (input) {
-        input.addEventListener('input', () => {
-          this.draw();
-          this.updateLegendRow(index);
-        });
-      }
-    });
 
     // Register instance globally for preset loading
     window.dialInstances.push(this);
+  }
+
+  dispose() {
+    this.events.abort();
+    this.parameterEvents.abort();
+    window.dialInstances = window.dialInstances.filter(dial => dial !== this);
+  }
+
+  setParamIds(paramIds) {
+    if (this.paramIds.join(',') === paramIds.join(',')) return;
+    this.parameterEvents.abort();
+    this.parameterEvents = new AbortController();
+    this.paramIds = [...paramIds];
+    this.inputs = paramIds.map(id => document.getElementById(id));
+    this.numRings = paramIds.length;
+    this.radii = paramIds.map((_, index) => 63 - index * 11);
+    this.buildLegend();
+    this.inputs.forEach((input, index) => input?.addEventListener('input', () => {
+      this.draw();
+      this.updateLegendRow(index);
+    }, { signal: this.parameterEvents.signal }));
+    this.draw();
   }
 
   getNormValue(index) {
@@ -1607,9 +1649,10 @@ class ConcentricGaugeDial {
       // --- 2. MIXER: 3 vertical mixing console faders ---
       const slotHeight = 90;
       const yStart = 30;
-      const colWidth = 120 / 3;
+      const count = this.inputs.length;
+      const colWidth = 120 / count;
       
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < count; i++) {
         const norm = this.getNormValue(i);
         const colX = 15 + i * colWidth + colWidth / 2;
         const color = ringColors[i % ringColors.length];
@@ -2096,9 +2139,7 @@ class ConcentricGaugeDial {
       if (this.canvasId === 'canvas-oscA' || this.canvasId === 'canvas-wheelmod') {
         ringIdx = 0;
       } else if (this.canvasId === 'canvas-mixer') {
-        if (x < 55) ringIdx = 0;
-        else if (x < 95) ringIdx = 1;
-        else ringIdx = 2;
+        ringIdx = Math.min(this.numRings - 1, Math.max(0, Math.floor(x / 150 * this.numRings)));
       } else if (this.canvasId === 'canvas-filterEnv' || this.canvasId === 'canvas-ampEnv') {
         if (x < 45) ringIdx = 0;
         else if (x < 75) ringIdx = 1;
@@ -2160,9 +2201,9 @@ class ConcentricGaugeDial {
         handleMove(e.clientX, e.clientY);
         e.preventDefault();
       }
-    });
+    }, { signal: this.events.signal });
 
-    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('mouseup', handleEnd, { signal: this.events.signal });
 
     this.canvas.addEventListener('touchstart', e => {
       handleStart(e.touches[0].clientX, e.touches[0].clientY);
@@ -2174,9 +2215,9 @@ class ConcentricGaugeDial {
         handleMove(e.touches[0].clientX, e.touches[0].clientY);
         e.preventDefault();
       }
-    }, { passive: false });
+    }, { passive: false, signal: this.events.signal });
 
-    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('touchend', handleEnd, { signal: this.events.signal });
   }
 }
 
@@ -2198,7 +2239,11 @@ window.addEventListener('DOMContentLoaded', () => {
   new ConcentricGaugeDial('canvas-master', ['masterVolume', 'masterTune'], 'legend-master');
   
   // Set up Preset system once DOM and dials are fully instantiated
+  initSynthModulesUI();
+  initEffectsUI();
   initPresetsSystem();
+  restoreLayoutState();
+  window.renderEffects();
 
 
 
@@ -2236,10 +2281,15 @@ window.addEventListener('DOMContentLoaded', () => {
 (function initDragAndDrop() {
   const grid = document.getElementById('mainGrid');
   let draggedItem = null;
+  let dragHandleCard = null;
+
+  grid.addEventListener('pointerdown', e => {
+    dragHandleCard = e.target.closest('.drag-handle')?.closest('.module-card') || null;
+  });
 
   grid.addEventListener('dragstart', e => {
     const card = e.target.closest('.module-card');
-    if (!card) return;
+    if (!card || card !== dragHandleCard) { e.preventDefault(); return; }
     draggedItem = card;
     setTimeout(() => {
       card.classList.add('dragging');
@@ -2252,6 +2302,7 @@ window.addEventListener('DOMContentLoaded', () => {
       card.classList.remove('dragging');
     }
     draggedItem = null;
+    dragHandleCard = null;
     document.querySelectorAll('.module-card').forEach(c => c.classList.remove('drag-over'));
   });
 
@@ -2273,7 +2324,7 @@ window.addEventListener('DOMContentLoaded', () => {
   grid.addEventListener('drop', e => {
     e.preventDefault();
     const targetCard = e.target.closest('.module-card');
-    if (!targetCard || targetCard === draggedItem) return;
+    if (!draggedItem || !targetCard || targetCard === draggedItem) return;
 
     targetCard.classList.remove('drag-over');
 
@@ -2289,6 +2340,7 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // Save panel layout order
     saveLayoutState();
+    syncEffectLayout();
     trackEvent('ui_layout_reorder', { card_id: draggedItem.id, target_card_id: targetCard.id });
   });
 })();
@@ -2363,10 +2415,388 @@ document.getElementById('octaveDown').addEventListener('click', () => {
 // ================================================================
 //  ÁUDIO: contexto e utilitários
 // ================================================================
+const EFFECT_DEFINITIONS = {
+  delay: { name: "Delay", params: { time: ["Time", .05, 1, .01, .3, "s"], feedback: ["Feedback", 0, .8, .01, .35, "%"], mix: ["Mix", 0, 1, .01, .25, "%"] } },
+  reverb: { name: "Reverb", params: { tone: ["Brightness", 500, 16000, 100, 6000, "Hz"], mix: ["Mix", 0, 1, .01, .25, "%"] } },
+  drive: { name: "Drive", params: { amount: ["Drive", 1, 20, .1, 3, "×"], tone: ["Brightness", 500, 16000, 100, 8000, "Hz"], mix: ["Mix", 0, 1, .01, .5, "%"] } },
+  chorus: { name: "Chorus", params: { rate: ["Rate", .1, 5, .1, .8, "Hz"], depth: ["Depth", 0, .008, .0001, .003, "ms"], mix: ["Mix", 0, 1, .01, .4, "%"] } }
+};
+
+function validateEffectsState(value) {
+  const empty = { version: 1, modules: [] };
+  if (!value || value.version !== 1 || !Array.isArray(value.modules) || value.modules.length > 4) return empty;
+  const seen = new Set();
+  const modules = [];
+  for (const item of value.modules) {
+    if (!item || !Object.hasOwn(EFFECT_DEFINITIONS, item.type) || seen.has(item.type) || typeof item.enabled !== "boolean" || !item.params || typeof item.params !== "object") return empty;
+    const params = {};
+    for (const [key, [, min, max]] of Object.entries(EFFECT_DEFINITIONS[item.type].params)) {
+      if (typeof item.params[key] !== "number" || !Number.isFinite(item.params[key])) return empty;
+      params[key] = clamp(item.params[key], min, max);
+    }
+    seen.add(item.type);
+    modules.push({ type: item.type, enabled: item.enabled, params });
+  }
+  return { version: 1, modules };
+}
+
+const SYNTH_MODULES = {
+  "mod-oscB": "Oscillator B",
+  "mod-glide": "Glide & Unison",
+  "mod-filter": "Lowpass Filter",
+  "mod-filterEnv": "Filter Envelope",
+  "mod-lfo": "LFO",
+  "mod-polymod": "Poly-Mod",
+  "mod-wheelmod": "Wheel Mod",
+  "mod-midi": "MIDI Manager"
+};
+const activeSynthModules = new Set(Object.keys(SYNTH_MODULES));
+const synthModuleCards = new Map();
+function isModuleActive(id) { return !Object.hasOwn(SYNTH_MODULES, id) || activeSynthModules.has(id); }
+function getActiveSynthModules() { return [...activeSynthModules]; }
+
+function syncModuleDependencies() {
+  const oscB = isModuleActive("mod-oscB"), filter = isModuleActive("mod-filter");
+  const filterEnv = isModuleActive("mod-filterEnv"), lfo = isModuleActive("mod-lfo");
+  const show = (element, visible) => {
+    if (!element) return;
+    element.hidden = !visible;
+    element.classList.toggle("dependency-hidden", !visible);
+    element.setAttribute("aria-hidden", String(!visible));
+  };
+  show(document.getElementById("row-mixB"), oscB);
+  show(document.getElementById("row-filterEnvAmount"), filterEnv);
+  show(document.getElementById("lfoToOscB"), oscB);
+  show(document.getElementById("lfoToFilter"), filter);
+  show(document.querySelector('#mod-polymod tr[data-source="osc-b"]'), oscB);
+  show(document.querySelector('#mod-polymod tr[data-source="filter-envelope"]'), filterEnv);
+  document.querySelectorAll('#mod-polymod th:last-child, #mod-polymod td:last-child').forEach(el => show(el, filter));
+  show(document.getElementById("wheelToFilter"), filter);
+  const wheel = synthModuleCards.get("mod-wheelmod") || document.getElementById("mod-wheelmod");
+  if (wheel) wheel.classList.toggle("module-unavailable", !lfo);
+  const dial = canvasId => window.dialInstances?.find(item => item.canvasId === canvasId);
+  dial("canvas-mixer")?.setParamIds(oscB ? ["mixA", "mixB", "mixNoise"] : ["mixA", "mixNoise"]);
+  dial("canvas-filter")?.setParamIds(filterEnv ? ["cutoff", "resonance", "filterEnvAmount"] : ["cutoff", "resonance"]);
+  dial("canvas-polymod")?.setParamIds([
+    ...(filterEnv ? ["polyFilterEnvAmt"] : []),
+    ...(oscB ? ["polyOscBAmt"] : [])
+  ]);
+  const add = document.getElementById("addEffect");
+  for (const option of add?.querySelectorAll('option[data-module]') || []) option.disabled = activeSynthModules.has(option.value);
+}
+
+function setSynthModules(ids, save = true) {
+  const next = new Set(Array.isArray(ids) ? ids.filter(id => Object.hasOwn(SYNTH_MODULES, id)) : Object.keys(SYNTH_MODULES));
+  const grid = document.getElementById("mainGrid");
+  for (const [id, card] of synthModuleCards) {
+    if (next.has(id) && !card.isConnected) grid.appendChild(card);
+    if (!next.has(id) && card.isConnected) card.remove();
+  }
+  activeSynthModules.clear(); next.forEach(id => activeSynthModules.add(id));
+  syncModuleDependencies();
+  if (save) { allNotesOff(); saveLayoutState(); saveActiveState(); }
+}
+
+function initSynthModulesUI() {
+  const add = document.getElementById("addEffect"), group = document.createElement("optgroup");
+  group.label = "Synth modules";
+  for (const [id, name] of Object.entries(SYNTH_MODULES)) {
+    const card = document.getElementById(id); synthModuleCards.set(id, card);
+    const handle = card.querySelector(".drag-handle");
+    handle.tabIndex = 0; handle.setAttribute("role", "button");
+    handle.setAttribute("aria-label", `Move ${name}`); handle.title = "Drag to reorder. Alt + arrow keys also work.";
+    const remove = document.createElement("button");
+    remove.className = "effect-remove module-remove";
+    remove.type = "button"; remove.setAttribute("aria-label", `Remove ${name}`); remove.title = "Remove module";
+    remove.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+    card.querySelector(".module-header").appendChild(remove);
+    remove.addEventListener("click", () => setSynthModules([...activeSynthModules].filter(active => active !== id)));
+    handle.addEventListener("keydown", event => {
+      if (!event.altKey || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+      event.preventDefault();
+      const before = ["ArrowLeft", "ArrowUp"].includes(event.key), sibling = before ? card.previousElementSibling : card.nextElementSibling;
+      if (sibling) { card.parentNode.insertBefore(card, before ? sibling : sibling.nextSibling); saveLayoutState(); syncEffectLayout(); handle.focus(); }
+    });
+    let pointer = null;
+    handle.addEventListener("pointerdown", event => {
+      if (event.pointerType === "mouse") return;
+      pointer = event.pointerId; handle.setPointerCapture(pointer); card.classList.add("dragging");
+    });
+    handle.addEventListener("pointermove", event => {
+      if (pointer !== event.pointerId) return;
+      const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".module-card");
+      if (target && target !== card) {
+        const bounds = target.getBoundingClientRect();
+        card.parentNode.insertBefore(card, event.clientY < bounds.top + bounds.height / 2 ? target : target.nextSibling);
+      }
+    });
+    const endPointer = () => { if (pointer === null) return; pointer = null; card.classList.remove("dragging"); saveLayoutState(); syncEffectLayout(); };
+    handle.addEventListener("pointerup", endPointer); handle.addEventListener("pointercancel", endPointer);
+    const option = document.createElement("option");
+    option.value = id; option.textContent = name; option.dataset.module = "true"; group.appendChild(option);
+  }
+  add.appendChild(group);
+  add.addEventListener("change", () => {
+    if (!Object.hasOwn(SYNTH_MODULES, add.value)) return;
+    setSynthModules([...activeSynthModules, add.value]);
+    synthModuleCards.get(add.value).scrollIntoView({ block: "nearest", behavior: "smooth" });
+    add.value = "";
+  });
+  syncModuleDependencies();
+}
+
+const reverbImpulses = new WeakMap();
+function getReverbImpulse(context) {
+  if (!reverbImpulses.has(context)) {
+    const length = Math.floor(context.sampleRate * 2.5);
+    const buffer = context.createBuffer(2, length, context.sampleRate);
+    let seed = 1931;
+    for (let channel = 0; channel < 2; channel++) {
+      const data = buffer.getChannelData(channel);
+      for (let i = 0; i < length; i++) {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        data[i] = (seed / 2147483648 - 1) * Math.pow(1 - i / length, 3);
+      }
+    }
+    reverbImpulses.set(context, buffer);
+  }
+  return reverbImpulses.get(context);
+}
+
+function createEffect(context, state) {
+  const nodes = [], sources = [];
+  const own = node => { nodes.push(node); return node; };
+  const input = own(context.createGain()), output = own(context.createGain());
+  const dry = own(context.createGain()), wet = own(context.createGain());
+  input.connect(dry).connect(output);
+  wet.connect(output);
+  const controls = {};
+  if (state.type === "delay") {
+    const delay = own(context.createDelay(1));
+    const feedback = own(context.createGain());
+    input.connect(delay).connect(wet);
+    delay.connect(feedback).connect(delay);
+    controls.time = delay.delayTime;
+    controls.feedback = feedback.gain;
+  } else if (state.type === "reverb") {
+    const convolver = own(context.createConvolver()), tone = own(context.createBiquadFilter());
+    convolver.buffer = getReverbImpulse(context);
+    tone.type = "lowpass";
+    input.connect(convolver).connect(tone).connect(wet);
+    controls.tone = tone.frequency;
+  } else if (state.type === "drive") {
+    const drive = own(context.createGain()), shaper = own(context.createWaveShaper());
+    const tone = own(context.createBiquadFilter());
+    const curve = new Float32Array(4096);
+    for (let i = 0; i < curve.length; i++) curve[i] = Math.tanh(2 * i / (curve.length - 1) - 1);
+    shaper.curve = curve;
+    shaper.oversample = "2x";
+    tone.type = "lowpass";
+    input.connect(drive).connect(shaper).connect(tone).connect(wet);
+    controls.amount = drive.gain;
+    controls.tone = tone.frequency;
+  } else if (state.type === "chorus") {
+    const delay = own(context.createDelay(.05)), lfo = own(context.createOscillator());
+    const depth = own(context.createGain());
+    delay.delayTime.value = .016;
+    input.connect(delay).connect(wet);
+    lfo.connect(depth).connect(delay.delayTime);
+    lfo.start();
+    sources.push(lfo);
+    controls.rate = lfo.frequency;
+    controls.depth = depth.gain;
+  }
+  function update(next, immediate = false) {
+    const set = (param, value) => {
+      if (immediate) param.value = value;
+      else param.setTargetAtTime(value, context.currentTime, .01);
+    };
+    for (const [key, param] of Object.entries(controls)) set(param, next.params[key]);
+    const mix = next.enabled ? next.params.mix : 0;
+    set(dry.gain, 1 - mix);
+    set(wet.gain, mix);
+  }
+  update(state, true);
+  return { input, output, update, dispose() { sources.forEach(source => source.stop()); nodes.forEach(node => node.disconnect()); } };
+}
+
+function createEffectRack(context, input, destination) {
+  const gate = context.createGain();
+  gate.connect(destination);
+  let state = { version: 1, modules: [] };
+  let instances = new Map();
+  let timer = null;
+  input.connect(gate);
+  function reconnect() {
+    timer = null;
+    input.disconnect();
+    for (const instance of instances.values()) instance.output.disconnect();
+    for (const [type, instance] of instances) {
+      if (!state.modules.some(item => item.type === type)) { instance.dispose(); instances.delete(type); }
+    }
+    let tail = input;
+    for (const item of state.modules) {
+      if (!instances.has(item.type)) instances.set(item.type, createEffect(context, item));
+      const instance = instances.get(item.type);
+      instance.update(item);
+      tail.connect(instance.input);
+      tail = instance.output;
+    }
+    tail.connect(gate);
+    gate.gain.cancelScheduledValues(context.currentTime);
+    gate.gain.setValueAtTime(0, context.currentTime);
+    gate.gain.linearRampToValueAtTime(1, context.currentTime + .02);
+  }
+  function replace(value) {
+    state = validateEffectsState(value);
+    if (timer !== null) clearTimeout(timer);
+    if (context.state !== "running") { reconnect(); return; }
+    gate.gain.cancelAndHoldAtTime(context.currentTime);
+    gate.gain.linearRampToValueAtTime(0, context.currentTime + .02);
+    timer = setTimeout(reconnect, 30);
+  }
+  return {
+    serialize: () => ({ version: 1, modules: state.modules.map(item => ({ ...item, params: { ...item.params } })) }),
+    replace,
+    set(type, key, value) {
+      const item = state.modules.find(module => module.type === type);
+      if (!item) return;
+      if (key === "enabled") item.enabled = !!value;
+      else {
+        const spec = EFFECT_DEFINITIONS[type].params[key];
+        if (!spec || !Number.isFinite(value)) return;
+        item.params[key] = clamp(value, spec[1], spec[2]);
+      }
+      instances.get(type)?.update(item);
+    }
+  };
+}
+
+function initEffectsUI() {
+  const add = document.getElementById("addEffect"), grid = document.getElementById("mainGrid");
+  const dials = new Map();
+  const group = document.createElement("optgroup"); group.label = "Effects";
+  for (const [type, definition] of Object.entries(EFFECT_DEFINITIONS)) {
+    const option = document.createElement("option");
+    option.value = type; option.textContent = definition.name;
+    group.appendChild(option);
+  }
+  add.appendChild(group);
+  function change(modules) {
+    effectRack.replace({ version: 1, modules });
+    renderEffects();
+    saveLayoutState();
+    saveActiveState();
+  }
+  add.addEventListener("change", () => {
+    const type = add.value, definition = EFFECT_DEFINITIONS[type];
+    if (!definition) return;
+    const modules = effectRack.serialize().modules;
+    if (!modules.some(item => item.type === type)) {
+      const params = Object.fromEntries(Object.entries(definition.params).map(([key, spec]) => [key, spec[4]]));
+      change([...modules, { type, enabled: true, params }]);
+      document.getElementById(`mod-fx-${type}`).scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+    add.value = "";
+  });
+  function renderEffects() {
+    const modules = effectRack.serialize().modules;
+    for (const option of add.options) {
+      if (!option.dataset.module) option.disabled = modules.some(item => item.type === option.value);
+    }
+    for (const [type, dial] of dials) {
+      if (!modules.some(item => item.type === type)) {
+        dial.dispose(); dials.delete(type);
+        document.getElementById(`mod-fx-${type}`).remove();
+        if (learning?.startsWith(`fx-${type}-`)) learning = null;
+      }
+    }
+    for (const item of modules) {
+      const definition = EFFECT_DEFINITIONS[item.type];
+      if (!dials.has(item.type)) {
+        const card = document.createElement("section");
+        card.className = "module-card effect-module"; card.draggable = true;
+        card.id = `mod-fx-${item.type}`; card.dataset.effect = item.type;
+        card.innerHTML = `<div class="drag-handle" tabindex="0" role="button" aria-label="Move ${definition.name}" title="Drag to reorder. Alt + arrow keys also work."></div>
+          <div class="module-header"><h2 class="module-title">${definition.name}</h2><div class="effect-heading"><span class="module-subtitle">Effect</span>
+          <button class="effect-remove" id="fx-${item.type}-remove" aria-label="Remove ${definition.name}" title="Remove module"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div></div>
+          <div class="concentric-layout-row"><div class="concentric-canvas-container"><canvas class="concentric-canvas" id="canvas-fx-${item.type}"></canvas></div><div class="concentric-legend" id="legend-fx-${item.type}"></div></div>
+          <div class="toggles-group"><button class="button-toggle" id="fx-${item.type}-enabled">Enabled</button></div>`;
+        const paramIds = [];
+        for (const [key, [label, min, max, step, , unit]] of Object.entries(definition.params)) {
+          const id = `fx-${item.type}-${key}`;
+          formatters[id] = { label, fmt: value => unit === "%" ? `${Math.round(value * 100)}%` : unit === "ms" ? `${(value * 1000).toFixed(1)} ms` : `${Number(value.toFixed(2))} ${unit}` };
+          const range = document.createElement("input");
+          range.id = id; range.type = "range"; range.className = "hidden-range";
+          range.min = min; range.max = max; range.step = step; range.value = item.params[key];
+          range.setAttribute("aria-label", `${definition.name}: ${label}`);
+          range.addEventListener("input", () => { effectRack.set(item.type, key, Number(range.value)); saveActiveState(); });
+          card.appendChild(range); paramIds.push(id);
+        }
+        grid.appendChild(card);
+        dials.set(item.type, new ConcentricGaugeDial(`canvas-fx-${item.type}`, paramIds, `legend-fx-${item.type}`));
+        card.querySelector('.effect-remove').addEventListener('click', () => {
+          change(effectRack.serialize().modules.filter(module => module.type !== item.type)); add.focus();
+        });
+        card.querySelector('.button-toggle').addEventListener('click', () => {
+          const current = effectRack.serialize().modules.find(module => module.type === item.type);
+          effectRack.set(item.type, 'enabled', !current.enabled); renderEffects(); saveActiveState();
+        });
+        const handle = card.querySelector('.drag-handle');
+        handle.addEventListener('keydown', event => {
+          if (!event.altKey || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+          event.preventDefault();
+          const before = ['ArrowLeft', 'ArrowUp'].includes(event.key), sibling = before ? card.previousElementSibling : card.nextElementSibling;
+          if (sibling) { grid.insertBefore(card, before ? sibling : sibling.nextSibling); syncEffectLayout(); saveLayoutState(); handle.focus(); }
+        });
+        let touchPointer = null;
+        handle.addEventListener('pointerdown', event => {
+          if (event.pointerType === 'mouse') return;
+          touchPointer = event.pointerId; handle.setPointerCapture(event.pointerId); card.classList.add('dragging');
+        });
+        handle.addEventListener('pointermove', event => {
+          if (touchPointer !== event.pointerId) return;
+          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest('.module-card');
+          if (target && target !== card) {
+            const bounds = target.getBoundingClientRect();
+            grid.insertBefore(card, event.clientY < bounds.top + bounds.height / 2 ? target : target.nextSibling);
+          }
+        });
+        const endTouch = () => { if (touchPointer === null) return; touchPointer = null; card.classList.remove('dragging'); syncEffectLayout(); saveLayoutState(); };
+        handle.addEventListener('pointerup', endTouch); handle.addEventListener('pointercancel', endTouch);
+      }
+      const dial = dials.get(item.type);
+      for (const key of Object.keys(definition.params)) document.getElementById(`fx-${item.type}-${key}`).value = item.params[key];
+      const enabled = document.getElementById(`fx-${item.type}-enabled`);
+      enabled.textContent = item.enabled ? 'Enabled' : 'Bypass'; enabled.classList.toggle('on', item.enabled); enabled.setAttribute('aria-pressed', String(item.enabled));
+      dial.draw(); dial.paramIds.forEach((id, index) => dial.updateLegendRow(index));
+    }
+    // Preserve the positions of non-effect cards when a preset changes effect order.
+    const slots = [...grid.querySelectorAll('.effect-module')].map(card => {
+      const slot = document.createComment('effect'); card.replaceWith(slot); return slot;
+    });
+    modules.forEach((item, index) => slots[index].replaceWith(dials.get(item.type).canvas.closest('.module-card')));
+  }
+  window.renderEffects = renderEffects;
+  renderEffects();
+}
+
+function syncEffectLayout() {
+  const state = effectRack.serialize();
+  const order = [...document.querySelectorAll('#mainGrid > .effect-module')].map(card => card.dataset.effect);
+  if (order.join(',') !== state.modules.map(item => item.type).join(',')) {
+    const byType = new Map(state.modules.map(item => [item.type, item]));
+    effectRack.replace({ version: 1, modules: order.map(type => byType.get(type)) });
+    saveActiveState();
+  }
+}
+
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 const audioCtx = new AudioCtx();
 const masterGain = audioCtx.createGain();
 masterGain.gain.value = 0.7;
+const voiceBus = audioCtx.createGain();
+const effectRack = createEffectRack(audioCtx, voiceBus, masterGain);
 
 // Create Analyser Node for master VU visualization
 const analyser = audioCtx.createAnalyser();
@@ -2432,7 +2862,116 @@ let voiceOrder = [];
 let voiceCounter = 0;
 let unisonVoiceIds = [];
 
-function buildOscStage(freq, type, pw) {
+const hardSyncProcessorSource = `
+class PhaseOscillator extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [
+      { name: 'frequency', defaultValue: 440, minValue: 0.01, maxValue: 24000 },
+      { name: 'detune', defaultValue: 0, minValue: -24000, maxValue: 24000 },
+      { name: 'pulseWidth', defaultValue: 0.5, minValue: 0.02, maxValue: 0.98 }
+    ];
+  }
+  constructor(options) {
+    super();
+    this.waveform = options.processorOptions.waveform;
+    this.synced = options.processorOptions.synced;
+    this.phase = 0;
+    this.previousMaster = 0;
+    this.running = true;
+    this.resetCount = 0;
+    this.lastResetFrame = 0;
+    this.lastReset = null;
+    this.port.onmessage = ({ data }) => {
+      if (data === 'stop') this.running = false;
+      if (data === 'inspect') this.port.postMessage({ enabled: this.synced, resetCount: this.resetCount, lastReset: this.lastReset });
+    };
+  }
+  blep(phase, step) {
+    if (phase < step) { const t = phase / step; return t + t - t * t - 1; }
+    if (phase > 1 - step) { const t = (phase - 1) / step; return t * t + t + t + 1; }
+    return 0;
+  }
+  process(inputs, outputs, parameters) {
+    if (!this.running) return false;
+    const out = outputs[0][0];
+    const reference = outputs[1][0];
+    const master = inputs[0]?.[0];
+    for (let i = 0; i < out.length; i++) {
+      const frequency = parameters.frequency[parameters.frequency.length === 1 ? 0 : i];
+      const detune = parameters.detune[parameters.detune.length === 1 ? 0 : i];
+      const step = Math.min(0.45, Math.max(0.000001, frequency * Math.pow(2, detune / 1200) / sampleRate));
+      const pw = Math.max(0.02, Math.min(0.98, parameters.pulseWidth[parameters.pulseWidth.length === 1 ? 0 : i]));
+      if (this.synced && master && this.previousMaster < 0 && master[i] >= 0) {
+        const fraction = master[i] / (master[i] - this.previousMaster);
+        this.phase = fraction * step;
+        const frame = currentFrame + i - fraction;
+        this.lastReset = { source: 'osc-a-zero-crossing', slavePhaseAfterReset: 0, cycleFrames: frame - this.lastResetFrame };
+        this.lastResetFrame = frame;
+        this.resetCount++;
+      }
+      if (master) this.previousMaster = master[i];
+      const phase = this.phase;
+      if (this.waveform === 'pulse') {
+        out[i] = (phase < pw ? 1 : 0) - pw + 0.5 * (this.blep(phase, step) - this.blep((phase - pw + 1) % 1, step));
+      } else if (this.waveform === 'sawtooth') {
+        out[i] = 2 * phase - 1 - this.blep(phase, step);
+      } else if (this.waveform === 'triangle') {
+        out[i] = 1 - 4 * Math.abs(phase - 0.5);
+      } else {
+        out[i] = Math.sin(2 * Math.PI * phase);
+      }
+      reference[i] = Math.sin(2 * Math.PI * phase);
+      this.phase = (phase + step) % 1;
+    }
+    return true;
+  }
+}
+registerProcessor('phase-oscillator', PhaseOscillator);
+`;
+
+const hardSyncEngine = { ready: false, error: null, readyPromise: null };
+hardSyncEngine.readyPromise = (async () => {
+  const url = URL.createObjectURL(new Blob([hardSyncProcessorSource], { type: 'text/javascript' }));
+  try {
+    if (!audioCtx.audioWorklet) throw new Error('AudioWorklet unavailable. Open this synth on localhost or HTTPS.');
+    await audioCtx.audioWorklet.addModule(url);
+    hardSyncEngine.ready = true;
+    return true;
+  } catch (error) {
+    hardSyncEngine.error = error.message;
+    const syncButton = document.querySelector('[data-flag="oscBSync"]');
+    syncButton.title = error.message; syncButton.disabled = true;
+    console.warn(error.message);
+    return false;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+})();
+
+function buildPhaseStage(freq, type, pw, master) {
+  const node = new AudioWorkletNode(audioCtx, 'phase-oscillator', {
+    numberOfInputs: 1, numberOfOutputs: 2, outputChannelCount: [1, 1],
+    parameterData: { frequency: freq, pulseWidth: pw },
+    processorOptions: { waveform: type, synced: Boolean(master) }
+  });
+  const output = audioCtx.createGain();
+  const syncOutput = audioCtx.createGain();
+  node.connect(output, 0);
+  node.connect(syncOutput, 1);
+  if (master) master.connect(node);
+  const stage = {
+    kind: master ? 'hard-sync' : 'phase', waveform: type, oscillators: [],
+    frequencyParams: [node.parameters.get('frequency')], detuneParams: [node.parameters.get('detune')],
+    pwParam: type === 'pulse' ? node.parameters.get('pulseWidth') : null,
+    output, syncOutput, node, pwDelay: null, period: 1,
+    dispose() { node.port.postMessage('stop'); node.disconnect(); syncOutput.disconnect(); node.port.close(); }
+  };
+  node.port.onmessage = ({ data }) => { stage.syncState = data; };
+  return stage;
+}
+
+function buildOscStage(freq, type, pw, now, needsReference = false) {
+  if (type === 'pulse' && hardSyncEngine.ready) return buildPhaseStage(freq, type, pw);
   if (type === "pulse") {
     const saw1 = audioCtx.createOscillator(); saw1.type = "sawtooth"; saw1.frequency.value = freq;
     const saw2 = audioCtx.createOscillator(); saw2.type = "sawtooth"; saw2.frequency.value = freq;
@@ -2443,21 +2982,37 @@ function buildOscStage(freq, type, pw) {
     const sum = audioCtx.createGain(); sum.gain.value = 0.5;
     saw1.connect(sum);
     saw2.connect(inv); inv.connect(delay); delay.connect(sum);
-    saw1.start(); saw2.start();
-    return { oscillators: [saw1, saw2], detuneParams: [saw1.detune, saw2.detune], output: sum, pwDelay: delay, period };
+    saw1.start(now); saw2.start(now);
+    return { oscillators: [saw1, saw2], frequencyParams: [saw1.frequency, saw2.frequency], detuneParams: [saw1.detune, saw2.detune], output: sum, pwDelay: delay, period };
   }
   const osc = audioCtx.createOscillator();
   osc.type = type; osc.frequency.value = freq;
   const g = audioCtx.createGain(); g.gain.value = 1;
-  osc.connect(g); osc.start();
-  return { oscillators: [osc], detuneParams: [osc.detune], output: g, pwDelay: null, period: 1 / Math.max(freq, 1) };
+  osc.connect(g); osc.start(now);
+  const oscillators = [osc];
+  let syncOutput = null;
+  if (needsReference) {
+    syncOutput = audioCtx.createOscillator();
+    syncOutput.type = 'sine'; syncOutput.frequency.value = freq; syncOutput.start(now);
+    oscillators.push(syncOutput);
+  }
+  return { kind: 'native', oscillators, frequencyParams: oscillators.map(o => o.frequency), detuneParams: oscillators.map(o => o.detune), output: g, syncOutput, pwDelay: null, period: 1 / Math.max(freq, 1) };
 }
+
+function pulseWidthParam(stage) { return stage.pwParam || stage.pwDelay?.delayTime; }
 
 function createVoice(note, velocity, unisonDetuneCents) {
   const now = audioCtx.currentTime;
   const extraDetune = unisonDetuneCents || 0;
   const targetFreqA = midiToFreq(note + octaveShift * 12) * Math.pow(2, (P.masterTune + extraDetune) / 1200);
-  const startFreqA = (P.glideOn && lastFreq != null) ? lastFreq : targetFreqA;
+  const glideEnabled = isModuleActive("mod-glide") && P.glideOn;
+  const oscBEnabled = isModuleActive("mod-oscB");
+  const filterEnabled = isModuleActive("mod-filter");
+  const filterEnvEnabled = filterEnabled && isModuleActive("mod-filterEnv");
+  const lfoEnabled = isModuleActive("mod-lfo");
+  const polyEnabled = isModuleActive("mod-polymod");
+  const wheelEnabled = isModuleActive("mod-wheelmod") && lfoEnabled;
+  const startFreqA = (glideEnabled && lastFreq != null) ? lastFreq : targetFreqA;
   lastFreq = targetFreqA;
 
   let targetFreqB;
@@ -2465,23 +3020,20 @@ function createVoice(note, velocity, unisonDetuneCents) {
     targetFreqB = clamp(Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12) * 2, 0.05, 30);
   } else {
     targetFreqB = targetFreqA * Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12);
-    if (P.oscBSync) {
-      const ratio = Math.max(1, Math.round(targetFreqB / targetFreqA));
-      targetFreqB = targetFreqA * ratio;
-    }
   }
-  const startFreqB = (P.glideOn && !P.oscBLowFreq && lastFreqB != null) ? lastFreqB : targetFreqB;
+  const startFreqB = (glideEnabled && !P.oscBLowFreq && lastFreqB != null) ? lastFreqB : targetFreqB;
   if (!P.oscBLowFreq) lastFreqB = targetFreqB;
 
-  const oscA = buildOscStage(startFreqA, P.waveA, P.pwA);
-  const oscB = buildOscStage(startFreqB, P.waveB, P.pwB);
+  const synced = oscBEnabled && P.oscBSync && !P.oscBLowFreq && hardSyncEngine.ready;
+  const oscA = buildOscStage(startFreqA, P.waveA, P.pwA, now, synced);
+  const oscB = synced ? buildPhaseStage(startFreqB, P.waveB, P.pwB, oscA.syncOutput) : buildOscStage(startFreqB, P.waveB, P.pwB, now);
 
-  if (P.glideOn && P.glideTime > 0.001) {
-    oscA.oscillators.forEach(o => { o.frequency.setValueAtTime(startFreqA, now); o.frequency.exponentialRampToValueAtTime(Math.max(targetFreqA, 0.01), now + P.glideTime); });
-    if (!P.oscBLowFreq) oscB.oscillators.forEach(o => { o.frequency.setValueAtTime(startFreqB, now); o.frequency.exponentialRampToValueAtTime(Math.max(targetFreqB, 0.01), now + P.glideTime); });
+  if (glideEnabled && P.glideTime > 0.001) {
+    oscA.frequencyParams.forEach(param => { param.setValueAtTime(startFreqA, now); param.exponentialRampToValueAtTime(Math.max(targetFreqA, 0.01), now + P.glideTime); });
+    if (!P.oscBLowFreq) oscB.frequencyParams.forEach(param => { param.setValueAtTime(startFreqB, now); param.exponentialRampToValueAtTime(Math.max(targetFreqB, 0.01), now + P.glideTime); });
   } else {
-    oscA.oscillators.forEach(o => o.frequency.value = targetFreqA);
-    if (!P.oscBLowFreq) oscB.oscillators.forEach(o => o.frequency.value = targetFreqB);
+    oscA.frequencyParams.forEach(param => param.value = targetFreqA);
+    if (!P.oscBLowFreq) oscB.frequencyParams.forEach(param => param.value = targetFreqB);
   }
   applyDetuneToOsc(oscA, pitchBendCents);
   applyDetuneToOsc(oscB, P.oscBLowFreq ? 0 : pitchBendCents);
@@ -2490,7 +3042,7 @@ function createVoice(note, velocity, unisonDetuneCents) {
   noiseSrc.buffer = noiseBuffer; noiseSrc.loop = true; noiseSrc.start();
 
   const mixA = audioCtx.createGain(); mixA.gain.value = P.mixA;
-  const mixB = audioCtx.createGain(); mixB.gain.value = P.oscBLowFreq ? 0 : P.mixB;
+  const mixB = audioCtx.createGain(); mixB.gain.value = !oscBEnabled || P.oscBLowFreq ? 0 : P.mixB;
   const mixN = audioCtx.createGain(); mixN.gain.value = P.mixNoise;
   oscA.output.connect(mixA);
   oscB.output.connect(mixB);
@@ -2502,7 +3054,7 @@ function createVoice(note, velocity, unisonDetuneCents) {
   const filterStages = [];
   for (let i = 0; i < 4; i++) {
     const f = audioCtx.createBiquadFilter();
-    f.type = "lowpass"; f.frequency.value = baseCutoff; f.Q.value = q;
+    f.type = filterEnabled ? "lowpass" : "allpass"; f.frequency.value = baseCutoff; f.Q.value = q;
     filterStages.push(f);
   }
   mixA.connect(filterStages[0]); mixB.connect(filterStages[0]); mixN.connect(filterStages[0]);
@@ -2516,7 +3068,7 @@ function createVoice(note, velocity, unisonDetuneCents) {
   scheduleADSR(filterEnvGain.gain, 1, P.fAttack, P.fDecay, P.fSustain, now);
 
   const filterEnvToCutoff = audioCtx.createGain();
-  filterEnvToCutoff.gain.value = P.filterEnvAmount * RANGE.filterEnvHz;
+  filterEnvToCutoff.gain.value = filterEnvEnabled ? P.filterEnvAmount * RANGE.filterEnvHz : 0;
   filterEnvGain.connect(filterEnvToCutoff);
   filterStages.forEach(f => filterEnvToCutoff.connect(f.frequency));
 
@@ -2524,35 +3076,35 @@ function createVoice(note, velocity, unisonDetuneCents) {
   const vel = Math.max(velocity, 1) / 127;
   scheduleADSR(ampEnv.gain, vel, P.aAttack, P.aDecay, P.aSustain, now);
   filterStages[3].connect(ampEnv);
-  ampEnv.connect(masterGain);
+  ampEnv.connect(voiceBus);
 
   // LFO
   const lfoNodes = {};
-  if (P.lfoToOscA) {
+  if (lfoEnabled && P.lfoToOscA) {
     lfoNodes.pitchA = audioCtx.createGain();
     lfoNodes.pitchA.gain.value = P.lfoDepth * RANGE.lfoPitchCents;
     lfoOsc.connect(lfoNodes.pitchA);
     oscA.detuneParams.forEach(dp => lfoNodes.pitchA.connect(dp));
   }
-  if (P.lfoToOscB && !P.oscBLowFreq) {
+  if (lfoEnabled && oscBEnabled && P.lfoToOscB && !P.oscBLowFreq) {
     lfoNodes.pitchB = audioCtx.createGain();
     lfoNodes.pitchB.gain.value = P.lfoDepth * RANGE.lfoPitchCents;
     lfoOsc.connect(lfoNodes.pitchB);
     oscB.detuneParams.forEach(dp => lfoNodes.pitchB.connect(dp));
   }
-  if (P.lfoToPW) {
-    if (oscA.pwDelay) {
+  if (lfoEnabled && P.lfoToPW) {
+    if (pulseWidthParam(oscA)) {
       lfoNodes.pwA = audioCtx.createGain();
-      lfoNodes.pwA.gain.value = P.lfoDepth * RANGE.lfoPWFrac * v.oscA.period;
-      lfoOsc.connect(lfoNodes.pwA); lfoNodes.pwA.connect(oscA.pwDelay.delayTime);
+      lfoNodes.pwA.gain.value = P.lfoDepth * RANGE.lfoPWFrac * oscA.period;
+      lfoOsc.connect(lfoNodes.pwA); lfoNodes.pwA.connect(pulseWidthParam(oscA));
     }
-    if (oscB.pwDelay) {
+    if (oscBEnabled && pulseWidthParam(oscB)) {
       lfoNodes.pwB = audioCtx.createGain();
-      lfoNodes.pwB.gain.value = P.lfoDepth * RANGE.lfoPWFrac * v.oscB.period;
-      lfoOsc.connect(lfoNodes.pwB); lfoNodes.pwB.connect(oscB.pwDelay.delayTime);
+      lfoNodes.pwB.gain.value = P.lfoDepth * RANGE.lfoPWFrac * oscB.period;
+      lfoOsc.connect(lfoNodes.pwB); lfoNodes.pwB.connect(pulseWidthParam(oscB));
     }
   }
-  if (P.lfoToFilter) {
+  if (lfoEnabled && filterEnabled && P.lfoToFilter) {
     lfoNodes.filter = audioCtx.createGain();
     lfoNodes.filter.gain.value = P.lfoDepth * RANGE.lfoFilterHz;
     lfoOsc.connect(lfoNodes.filter);
@@ -2561,35 +3113,35 @@ function createVoice(note, velocity, unisonDetuneCents) {
 
   // Poly-Mod
   const polyNodes = {};
-  if (P.polyFE_freqA) {
+  if (polyEnabled && filterEnvEnabled && P.polyFE_freqA) {
     polyNodes.feFreqA = audioCtx.createGain();
     polyNodes.feFreqA.gain.value = P.polyFilterEnvAmt * RANGE.polyFreqCents;
     filterEnvGain.connect(polyNodes.feFreqA);
     oscA.detuneParams.forEach(dp => polyNodes.feFreqA.connect(dp));
   }
-  if (P.polyFE_pw && oscA.pwDelay) {
+  if (polyEnabled && filterEnvEnabled && P.polyFE_pw && pulseWidthParam(oscA)) {
     polyNodes.fePW = audioCtx.createGain();
     polyNodes.fePW.gain.value = P.polyFilterEnvAmt * RANGE.polyPWFrac * oscA.period;
-    filterEnvGain.connect(polyNodes.fePW); polyNodes.fePW.connect(oscA.pwDelay.delayTime);
+    filterEnvGain.connect(polyNodes.fePW); polyNodes.fePW.connect(pulseWidthParam(oscA));
   }
-  if (P.polyFE_filter) {
+  if (polyEnabled && filterEnvEnabled && P.polyFE_filter) {
     polyNodes.feFilter = audioCtx.createGain();
     polyNodes.feFilter.gain.value = P.polyFilterEnvAmt * RANGE.polyFilterHz;
     filterEnvGain.connect(polyNodes.feFilter);
     filterStages.forEach(f => polyNodes.feFilter.connect(f.frequency));
   }
-  if (P.polyOB_freqA) {
+  if (polyEnabled && oscBEnabled && P.polyOB_freqA) {
     polyNodes.obFreqA = audioCtx.createGain();
     polyNodes.obFreqA.gain.value = P.polyOscBAmt * RANGE.polyFreqCents;
     oscB.output.connect(polyNodes.obFreqA);
     oscA.detuneParams.forEach(dp => polyNodes.obFreqA.connect(dp));
   }
-  if (P.polyOB_pw && oscA.pwDelay) {
+  if (polyEnabled && oscBEnabled && P.polyOB_pw && pulseWidthParam(oscA)) {
     polyNodes.obPW = audioCtx.createGain();
     polyNodes.obPW.gain.value = P.polyOscBAmt * RANGE.polyPWFrac * oscA.period;
-    oscB.output.connect(polyNodes.obPW); polyNodes.obPW.connect(oscA.pwDelay.delayTime);
+    oscB.output.connect(polyNodes.obPW); polyNodes.obPW.connect(pulseWidthParam(oscA));
   }
-  if (P.polyOB_filter) {
+  if (polyEnabled && oscBEnabled && filterEnabled && P.polyOB_filter) {
     polyNodes.obFilter = audioCtx.createGain();
     polyNodes.obFilter.gain.value = P.polyOscBAmt * RANGE.polyFilterHz;
     oscB.output.connect(polyNodes.obFilter);
@@ -2599,14 +3151,14 @@ function createVoice(note, velocity, unisonDetuneCents) {
   // Wheel-Mod
   const wheelNodes = {};
   const wheelFactor = P.wheelAmount * (modWheelValue / 127);
-  if (P.wheelToPitch) {
+  if (wheelEnabled && P.wheelToPitch) {
     wheelNodes.pitch = audioCtx.createGain();
     wheelNodes.pitch.gain.value = wheelFactor * RANGE.wheelPitchCents;
     lfoOsc.connect(wheelNodes.pitch);
     oscA.detuneParams.forEach(dp => wheelNodes.pitch.connect(dp));
     if (!P.oscBLowFreq) oscB.detuneParams.forEach(dp => wheelNodes.pitch.connect(dp));
   }
-  if (P.wheelToFilter) {
+  if (wheelEnabled && filterEnabled && P.wheelToFilter) {
     wheelNodes.filter = audioCtx.createGain();
     wheelNodes.filter.gain.value = wheelFactor * RANGE.wheelFilterHz;
     lfoOsc.connect(wheelNodes.filter);
@@ -2615,7 +3167,7 @@ function createVoice(note, velocity, unisonDetuneCents) {
 
   const id = ++voiceCounter;
   const voice = {
-    id, note, oscA, oscB, noiseSrc, mixA, mixB, mixN, filterStages,
+    id, note, extraDetune, lowFrequencyB: P.oscBLowFreq, oscA, oscB, noiseSrc, mixA, mixB, mixN, filterStages,
     filterEnvGain, filterEnvToCutoff, envConst, ampEnv, lfoNodes, polyNodes, wheelNodes, releasing: false
   };
   voices.set(id, voice);
@@ -2669,6 +3221,8 @@ function releaseVoice(voice, fast = false) {
 }
 
 function cleanupVoiceNodes(voice) {
+  voice.oscA.dispose?.(); voice.oscB.dispose?.();
+  for (const node of [...Object.values(voice.lfoNodes), ...Object.values(voice.wheelNodes)]) lfoOsc.disconnect(node);
   const nodes = [
     ...voice.oscA.oscillators, voice.oscA.output, voice.oscA.pwDelay,
     ...voice.oscB.oscillators, voice.oscB.output, voice.oscB.pwDelay,
@@ -2688,7 +3242,7 @@ function updatePolyBadge() {
     if (!v.releasing) activeCount++;
   });
 
-  document.getElementById("polyBadge").textContent = activeCount + " vozes";
+  document.getElementById("polyBadge").textContent = activeCount + " voices";
   
   // LED indicators on panel
   for (let i = 0; i < 8; i++) {
@@ -2705,6 +3259,7 @@ function updatePolyBadge() {
 
 // ---- Note on/off ----
 const noteToVoiceIds = new Map();
+const pendingNotes = new Map();
 
 function noteOn(note, velocity) {
   if (audioCtx.state === "suspended") {
@@ -2712,9 +3267,16 @@ function noteOn(note, velocity) {
       trackEvent('synth_audio_init', { source: 'note_on' });
     });
   }
+  if (!hardSyncEngine.ready && !hardSyncEngine.error) {
+    pendingNotes.set(note, velocity);
+    hardSyncEngine.readyPromise.then(() => {
+      if (pendingNotes.has(note)) { const pendingVelocity = pendingNotes.get(note); pendingNotes.delete(note); noteOn(note, pendingVelocity); }
+    });
+    return;
+  }
   pulseAmp = 1.0;
 
-  if (P.unisonOn) {
+  if (isModuleActive("mod-glide") && P.unisonOn) {
     unisonVoiceIds.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, true); });
     unisonVoiceIds = [];
     const n = clamp(P.maxVoices, 1, 8);
@@ -2741,14 +3303,16 @@ function noteOn(note, velocity) {
 }
 
 function noteOff(note) {
+  pendingNotes.delete(note);
   const list = noteToVoiceIds.get(note);
   if (!list) return;
   list.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, false); });
   noteToVoiceIds.delete(note);
-  if (P.unisonOn) unisonVoiceIds = unisonVoiceIds.filter(id => !list.includes(id));
+  if (isModuleActive("mod-glide") && P.unisonOn) unisonVoiceIds = unisonVoiceIds.filter(id => !list.includes(id));
 }
 
 function allNotesOff() {
+  pendingNotes.clear();
   voices.forEach(v => releaseVoice(v, true));
   noteToVoiceIds.clear();
   unisonVoiceIds = [];
@@ -2756,10 +3320,19 @@ function allNotesOff() {
 
 // ---- Live param update ----
 function liveUpdate(key) {
+  if (key === "lfoRate") lfoOsc.frequency.value = P.lfoRate;
+  if (key === "lfoShape") lfoOsc.type = P.lfoShape;
   if (key === "fAttack" || key === "fDecay" || key === "fSustain" || key === "fRelease") {
     updateDynamicAccent();
   }
   voices.forEach(v => {
+    if (key === 'oscBCoarse' || key === 'oscBFine' || key === 'masterTune') {
+      const freqA = midiToFreq(v.note + octaveShift * 12) * Math.pow(2, (P.masterTune + v.extraDetune) / 1200);
+      const freqB = v.lowFrequencyB ? clamp(Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12) * 2, .05, 30) : freqA * Math.pow(2, (P.oscBCoarse + P.oscBFine / 100) / 12);
+      if (key === 'masterTune') v.oscA.frequencyParams.forEach(param => { param.cancelAndHoldAtTime(audioCtx.currentTime); param.setTargetAtTime(freqA, audioCtx.currentTime, .01); });
+      v.oscB.frequencyParams.forEach(param => { param.cancelAndHoldAtTime(audioCtx.currentTime); param.setTargetAtTime(freqB, audioCtx.currentTime, .01); });
+    }
+    if (key === 'filterEnvAmount') v.filterEnvToCutoff.gain.setTargetAtTime(P.filterEnvAmount * RANGE.filterEnvHz, audioCtx.currentTime, .01);
     if (key === "cutoff" || key === "resonance") {
       const note = v.note;
       const keyTrackMul = Math.pow(2, P.keyTrack * (note - 60) / 12);
@@ -2770,8 +3343,8 @@ function liveUpdate(key) {
     if (key === "mixA") v.mixA.gain.setTargetAtTime(P.mixA, audioCtx.currentTime, 0.01);
     if (key === "mixB" && !P.oscBLowFreq) v.mixB.gain.setTargetAtTime(P.mixB, audioCtx.currentTime, 0.01);
     if (key === "mixNoise") v.mixN.gain.setTargetAtTime(P.mixNoise, audioCtx.currentTime, 0.01);
-    if (key === "pwA" && v.oscA.pwDelay) v.oscA.pwDelay.delayTime.setTargetAtTime(clamp(P.pwA, 0.02, 0.98) * v.oscA.period, audioCtx.currentTime, 0.01);
-    if (key === "pwB" && v.oscB.pwDelay) v.oscB.pwDelay.delayTime.setTargetAtTime(clamp(P.pwB, 0.02, 0.98) * v.oscB.period, audioCtx.currentTime, 0.01);
+    if (key === "pwA" && pulseWidthParam(v.oscA)) pulseWidthParam(v.oscA).setTargetAtTime(clamp(P.pwA, 0.02, 0.98) * v.oscA.period, audioCtx.currentTime, 0.01);
+    if (key === "pwB" && pulseWidthParam(v.oscB)) pulseWidthParam(v.oscB).setTargetAtTime(clamp(P.pwB, 0.02, 0.98) * v.oscB.period, audioCtx.currentTime, 0.01);
     if (key === "lfoDepth") {
       if (v.lfoNodes.pitchA) v.lfoNodes.pitchA.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPitchCents, audioCtx.currentTime, 0.01);
       if (v.lfoNodes.pitchB) v.lfoNodes.pitchB.gain.setTargetAtTime(P.lfoDepth * RANGE.lfoPitchCents, audioCtx.currentTime, 0.01);
@@ -2997,7 +3570,7 @@ function renderCcList() {
   const el = document.getElementById("ccList");
   const map = ccMaps[activeBank];
   el.innerHTML = Object.entries(map)
-    .map(([cc, param]) => `<div><b>K${cc}</b> → ${param || "<i>livre</i>"}</div>`)
+    .map(([cc, param]) => `<div><b>K${cc}</b> → ${param || "<i>free</i>"}</div>`)
     .join("");
 }
 renderCcList();
@@ -3028,11 +3601,11 @@ document.addEventListener("click", e => {
   if (learning === btn.dataset.param) {
     learning = null;
     btn.classList.remove("active");
-    log("MIDI Learn cancelado.");
+    log("MIDI Learn cancelled.");
   } else {
     learning = btn.dataset.param;
     btn.classList.add("active");
-    log(`MIDI Learn ativo: Gire um Knob para mapear [${formatters[learning]?.label || learning}]`);
+    log(`MIDI Learn active: turn a knob to map [${formatters[learning]?.label || learning}]`);
   }
 });
 
@@ -3067,8 +3640,8 @@ document.getElementById("connectBtn").addEventListener("click", initMIDI);
 
 async function initMIDI() {
   if (!navigator.requestMIDIAccess) {
-    statusText.textContent = "MIDI não suportado";
-    log("Erro: navigator.requestMIDIAccess não disponível.");
+    statusText.textContent = "MIDI not supported";
+    log("Error: navigator.requestMIDIAccess is unavailable.");
     trackEvent('midi_connection', { status: 'not_supported' });
     return;
   }
@@ -3082,7 +3655,7 @@ async function initMIDI() {
         trackEvent('synth_audio_init', { source: 'midi_init' });
       });
     }
-    log("Acesso MIDI Concedido com Sysex.");
+    log("MIDI access granted with SysEx.");
     trackEvent('midi_connection', { status: 'success', sysex: true });
   } catch (err) {
     // Fallback if sysex is denied
@@ -3095,11 +3668,11 @@ async function initMIDI() {
           trackEvent('synth_audio_init', { source: 'midi_init' });
         });
       }
-      log("Acesso MIDI Concedido (Sysex desativado).");
+      log("MIDI access granted (SysEx disabled).");
       trackEvent('midi_connection', { status: 'success', sysex: false });
     } catch (fallbackErr) {
-      statusText.textContent = "Permissão Negada";
-      log("Erro ao obter acesso MIDI: " + fallbackErr.message);
+      statusText.textContent = "Permission denied";
+      log("Could not access MIDI: " + fallbackErr.message);
       trackEvent('midi_connection', { status: 'permission_denied', error: fallbackErr.message });
     }
   }
@@ -3109,9 +3682,9 @@ function populateDevices() {
   deviceSelect.innerHTML = "";
   const inputs = Array.from(midiAccess.inputs.values());
   if (inputs.length === 0) {
-    deviceSelect.innerHTML = "<option>Nenhum</option>";
+    deviceSelect.innerHTML = "<option>None</option>";
     dot.classList.remove("on");
-    statusText.textContent = "Sem MIDI";
+    statusText.textContent = "No MIDI";
     return;
   }
   inputs.forEach(input => {
@@ -3142,8 +3715,8 @@ function populateDevices() {
       deviceSelect.value = currentInput.id;
     } else {
       dot.classList.remove("on");
-      statusText.textContent = "Desconectado";
-      log("Aparelho ativo desconectado fisicamente.");
+      statusText.textContent = "Disconnected";
+      log("The active device was disconnected.");
     }
   }
 }
@@ -3153,7 +3726,7 @@ deviceSelect.addEventListener("change", () => selectDevice(deviceSelect.value));
 async function selectDevice(id) {
   if (currentInput) {
     currentInput.onmidimessage = null;
-    log("Porta fechada: " + currentInput.name);
+    log("Port closed: " + currentInput.name);
   }
   currentInput = midiAccess.inputs.get(id);
   if (!currentInput) return;
@@ -3164,7 +3737,7 @@ async function selectDevice(id) {
     currentInput.onmidimessage = onMIDIMessage;
     dot.classList.add("on");
     statusText.textContent = currentInput.name;
-    log(`Porta Ativa: ${currentInput.name} (Conexão: ${currentInput.connection}, Estado: ${currentInput.state})`);
+    log(`Active port: ${currentInput.name} (connection: ${currentInput.connection}, state: ${currentInput.state})`);
     trackEvent('midi_device_select', { device_name: currentInput.name });
     
     // Save last successfully selected MIDI Device
@@ -3172,7 +3745,7 @@ async function selectDevice(id) {
       localStorage.setItem("prophet_concentric_midi_device_id", id);
     } catch(e) {}
   } catch (err) {
-    log("Erro ao abrir dispositivo MIDI: " + err.message);
+    log("Could not open MIDI device: " + err.message);
     trackEvent('midi_device_select_error', { device_name: currentInput.name, error: err.message });
   }
 }
@@ -3240,7 +3813,7 @@ function onMIDIMessage(e) {
       });
     }
   } catch (err) {
-    log("Erro ao processar mensagem MIDI: " + err.message);
+    log("Could not process MIDI message: " + err.message);
   }
 }
 
@@ -3950,12 +4523,12 @@ const factoryPresets = {
 
 // Ordem e agrupamento do dropdown. Nome que nao estiver aqui cai em "Outros".
 const presetCategories = {
-  "Teclas": ["Clean Piano", "FM-Style Rhodes", "Classic Organ", "Reso-Clav", "Ringing Bells", "Ethereal Chimes"],
-  "Baixos": ["Snappy Bass", "Acid Bass", "Fat Square Bass", "Sub-Bass Boom"],
+  "Keys": ["Clean Piano", "FM-Style Rhodes", "Classic Organ", "Reso-Clav", "Ringing Bells", "Ethereal Chimes"],
+  "Basses": ["Snappy Bass", "Acid Bass", "Fat Square Bass", "Sub-Bass Boom"],
   "Leads": ["Pro-V Brass", "80s Poly Lead", "Synthwave Pluck", "Solo Flute", "G-Funk Lead"],
   "Pads": ["Warm Pad", "Ambient Wind", "Phasey String Pad", "Unison Swarm", "Ghostly Choir", "Deep Space Drone", "Detroit Techno Chord"],
-  "FX & Percussao": ["Sci-Fi Siren", "Space FX Sweep", "Lazer Zap", "Woodblock Perc", "Retro Game Jump", "Metallic Hit", "Helicopter Noise"],
-  "Musicas": ["Jump (Van Halen)", "Axel F (Beverly Hills Cop)", "Take On Me (a-ha)", "The Final Countdown (Europe)", "Blade Runner (Vangelis)", "Popcorn (Gershon Kingsley)", "Cars (Gary Numan)", "Chameleon (Herbie Hancock)", "Sweet Dreams (Eurythmics)", "Stranger Things", "Baba O'Riley (The Who)"]
+  "FX & Percussion": ["Sci-Fi Siren", "Space FX Sweep", "Lazer Zap", "Woodblock Perc", "Retro Game Jump", "Metallic Hit", "Helicopter Noise"],
+  "Songs": ["Jump (Van Halen)", "Axel F (Beverly Hills Cop)", "Take On Me (a-ha)", "The Final Countdown (Europe)", "Blade Runner (Vangelis)", "Popcorn (Gershon Kingsley)", "Cars (Gary Numan)", "Chameleon (Herbie Hancock)", "Sweet Dreams (Eurythmics)", "Stranger Things", "Baba O'Riley (The Who)"]
 };
 
 let userPresets = {};
@@ -3981,7 +4554,7 @@ function initPresetsSystem() {
     const groups = Object.entries(presetCategories)
       .map(([label, names]) => [label, names.filter(n => n in factoryPresets)]);
     const uncategorized = Object.keys(factoryPresets).filter(n => !categorized.has(n));
-    if (uncategorized.length) groups.push(["Outros", uncategorized]);
+    if (uncategorized.length) groups.push(["Other", uncategorized]);
 
     groups.forEach(([label, names]) => {
       if (!names.length) return;
@@ -4010,7 +4583,7 @@ function initPresetsSystem() {
     } else {
       const opt = document.createElement("option");
       opt.disabled = true;
-      opt.textContent = "(Nenhum salvo)";
+      opt.textContent = "(None saved)";
       userGroup.appendChild(opt);
     }
     select.appendChild(userGroup);
@@ -4107,19 +4680,25 @@ function initPresetsSystem() {
       delBtn.style.display = "inline-block";
     }
     if (data) {
-      applyPreset(data);
+      if (type === "user") {
+        effectRack.replace(data.effects);
+        window.renderEffects();
+        if (Array.isArray(data.modules)) setSynthModules(data.modules, false);
+      }
+      const { effects, modules, ...parameters } = data;
+      applyPreset(parameters);
       trackEvent('preset_select', { preset_name: name, preset_type: type });
     }
   });
 
   // Handle Saving new Presets
   saveBtn.addEventListener("click", () => {
-    const name = prompt("Digite o nome do seu novo Preset:");
+    const name = prompt("Enter a name for the new preset:");
     if (!name || name.trim() === "") return;
     const cleanName = name.trim();
 
     // Clone parameter state and append visual octave shift
-    const presetData = { ...P, octave: octaveShift };
+    const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules() };
     userPresets[cleanName] = presetData;
     
     try {
@@ -4131,7 +4710,7 @@ function initPresetsSystem() {
     populatePresetsDropdown();
     select.value = "user_" + cleanName;
     delBtn.style.display = "inline-block";
-    log(`Preset salvo: "${cleanName}"`);
+    log(`Preset saved: "${cleanName}"`);
     saveActiveState();
     trackEvent('preset_save', { preset_name: cleanName });
   });
@@ -4142,7 +4721,7 @@ function initPresetsSystem() {
     if (!val.startsWith("user_")) return;
     const name = val.replace("user_", "");
 
-    if (confirm(`Deseja mesmo apagar o preset "${name}"?`)) {
+    if (confirm(`Delete the preset "${name}"?`)) {
       delete userPresets[name];
       try {
         localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));
@@ -4157,7 +4736,7 @@ function initPresetsSystem() {
       select.value = "fact_" + firstFact;
       applyPreset(factoryPresets[firstFact]);
       delBtn.style.display = "none";
-      log(`Preset removido: "${name}"`);
+      log(`Preset removed: "${name}"`);
       saveActiveState();
       trackEvent('preset_delete', { preset_name: name });
     }
@@ -4178,6 +4757,9 @@ function initPresetsSystem() {
   }
 
   if (loadedState && loadedState.P) {
+    setSynthModules(loadedState.modules, false);
+    effectRack.replace(loadedState.effects);
+    window.renderEffects();
     // Restore Bank
     if (loadedState.activeBank) {
       switchBank(loadedState.activeBank, true);
@@ -4189,7 +4771,7 @@ function initPresetsSystem() {
       select.value = loadedState.selectedPreset;
       delBtn.style.display = loadedState.selectedPreset.startsWith("user_") ? "inline-block" : "none";
     }
-    log("Sessão anterior restaurada.");
+    log("Previous session restored.");
   } else {
     // Default boot preset
     const defaultPatch = Object.keys(factoryPresets)[0];

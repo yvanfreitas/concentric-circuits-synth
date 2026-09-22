@@ -69,8 +69,18 @@ async function run() {
   await load(url);
   await check("initiallyDry", "effectRack.serialize().modules.length === 0");
   await check("midiModulesSeparated", "!!document.getElementById('mod-midi') && !!document.getElementById('mod-midi-bindings') && !!document.getElementById('mod-midi-monitor') && !document.querySelector('#mod-midi #ccList') && !document.querySelector('#mod-midi #log')");
+  await check("moduleHeaderDesign", "!document.querySelector('.module-subtitle') && getComputedStyle(document.querySelector('.module-title')).fontSize === '13px' && getComputedStyle(document.querySelector('.module-title')).fontWeight === '700' && getComputedStyle(document.querySelector('.drag-handle')).height === '0px' && getComputedStyle(document.querySelector('.drag-handle')).marginBottom === '-12px'");
   await evaluate(`document.querySelector('#row-resonance .learn-btn').click(); onMIDIMessage({data:new Uint8Array([0xB0,1,99])});`);
   await check("learnUpdatesBindings", "ccMaps[activeBank][1] === 'resonance' && document.querySelector('#ccList [data-cc=\"1\"]')?.textContent.includes('Reson.') && document.getElementById('log').textContent.includes('Mapped CC 1 to resonance')");
+  await check("performanceModulesFullWidth", "['mod-sequencer','mod-recorder'].every(id => document.getElementById(id)?.classList.contains('performance-module'))");
+  await evaluate(`document.querySelector('#seqRoll [data-step="0"][data-note="64"]').click(); document.getElementById('seqVelocity').value='111'; document.getElementById('seqVelocity').dispatchEvent(new Event('change')); const cutoff=document.getElementById('cutoff'); cutoff.value='4321'; cutoff.dispatchEvent(new Event('input')); startMidiRecording(); onMIDIMessage({data:new Uint8Array([0x90,64,111])}); onMIDIMessage({data:new Uint8Array([0x80,64,0])}); stopMidiRecorder(); addMidiRecorderTrack(); cutoff.value='8000'; cutoff.dispatchEvent(new Event('input')); document.querySelector('#mod-oscB .module-remove').click(); startMidiRecording(); onMIDIMessage({data:new Uint8Array([0x90,67,96])}); onMIDIMessage({data:new Uint8Array([0x80,67,0])}); stopMidiRecorder(); document.querySelector('[data-track="1"]').click();`);
+  await check("sequencerAndRecorderEdit", "sequencerState.steps[0].active && sequencerState.steps[0].note === 64 && sequencerState.steps[0].velocity === 111 && document.querySelectorAll('#seqKeyboard .piano-key').length === 49 && document.querySelectorAll('#seqRoll .piano-cell').length === 784 && document.querySelector('#seqRoll [data-step=\"0\"][data-note=\"64\"]')?.classList.contains('active') && getComputedStyle(document.querySelector('#seqKeyboard .piano-key')).backgroundImage.includes('gradient') && document.querySelector('#seqKeyboard .piano-key.black').getBoundingClientRect().width < document.querySelector('#seqKeyboard .piano-key:not(.black)').getBoundingClientRect().width && midiRecorderState.tracks.length === 2 && midiRecorderState.tracks.every(track => track.events.length === 2) && midiRecorderState.activeTrackId === 1 && document.querySelector('[data-track=\"1\"] .track-preview rect') && P.cutoff === 4321 && isModuleActive('mod-oscB')");
+  await evaluate(`document.getElementById('seqLength').value='24'; document.getElementById('seqLength').dispatchEvent(new Event('change'));`);
+  await check("sequencerRollLengthEditable", "sequencerState.steps.length === 24 && document.querySelectorAll('#seqRoll .piano-cell').length === 1176 && document.getElementById('seqLength').value === '24' && sequencerState.steps[0].note === 64");
+  await evaluate(`document.getElementById('cutoff').value='5555'; document.getElementById('cutoff').dispatchEvent(new Event('input'));`);
+  await check("armedTrackFollowsSynthEdits", "P.cutoff === 5555 && midiRecorderState.tracks.find(track => track.id === 1)?.patch?.P?.cutoff === 5555");
+  await evaluate(`new Promise(resolve => { playMidiRecording(); setTimeout(() => { window.__recorderPlaybackProof = { voices: [...voices.values()].filter(voice => voice.playback).map(voice => ({ trackId: voice.playback.trackId, cutoff: voice.params.cutoff, oscB: voice.playback.patch.modules.includes('mod-oscB') })), contexts: recorderPlaybackContexts.length, isolatedInputs: new Set(recorderPlaybackContexts.map(context => context.input)).size, selectedCutoff: P.cutoff }; stopMidiRecorder(); resolve(); }, 100); })`);
+  await check("recorderTracksKeepOwnPatches", "__recorderPlaybackProof.contexts === 2 && __recorderPlaybackProof.isolatedInputs === 2 && __recorderPlaybackProof.selectedCutoff === 5555 && __recorderPlaybackProof.voices.some(voice => voice.trackId === 1 && voice.cutoff === 5555 && voice.oscB) && __recorderPlaybackProof.voices.some(voice => voice.trackId === 2 && voice.cutoff === 8000 && !voice.oscB)");
   evidence.signal = await evaluate(`(async () => {
     const result = {};
     for (const type of Object.keys(EFFECT_DEFINITIONS)) {
@@ -117,6 +127,9 @@ async function run() {
   await evaluate(`localStorage.setItem('prophet_concentric_layout_order', JSON.stringify([...document.querySelectorAll('#mainGrid > .module-card')].map(card => card.id).filter(id => !['mod-midi-bindings','mod-midi-monitor'].includes(id))))`);
   await load(url + "?legacy-layout=1");
   await check("legacyMidiLayoutMigrated", "(() => { const ids=[...document.querySelectorAll('#mainGrid > .module-card')].map(card=>card.id), midi=ids.indexOf('mod-midi'); return ids[midi+1] === 'mod-midi-bindings' && ids[midi+2] === 'mod-midi-monitor'; })()");
+  await check("performanceSessionRestored", "sequencerState.steps.length === 24 && sequencerState.steps[0].note === 64 && sequencerState.steps[0].velocity === 111 && midiRecorderState.tracks.length === 2 && midiRecorderState.tracks[0].events.length === 2 && midiRecorderState.tracks[0].patch?.P?.cutoff === 5555 && !!document.querySelector('[data-track=\"1\"] .track-preview rect')");
+  await evaluate(`window.prompt=()=>'<Lead & Bass>'; window.confirm=()=>true; document.querySelector('[data-track="1"] [data-action="rename"]').click(); document.querySelector('[data-track="2"] [data-action="clear"]').click(); document.getElementById('seqClear').click();`);
+  await check("performanceContentCanBeReset", "midiRecorderState.tracks[0].name === '<Lead & Bass>' && document.querySelector('[data-track=\"1\"] .track-name').textContent === '<Lead & Bass>' && !document.querySelector('[data-track=\"1\"] .track-name img') && midiRecorderState.tracks[1].events.length === 0 && midiRecorderState.tracks[1].duration === 0 && midiRecorderState.tracks[1].patch?.P?.cutoff === 8000 && sequencerState.steps.length === 24 && sequencerState.steps.every(step => !step.active && step.note === 60 && step.velocity === 100)");
   const expected = await snapshot();
   await evaluate("window.prompt = () => 'Rack QA'; document.getElementById('savePresetBtn').click()");
   await load(url + "?restore=1");
@@ -128,10 +141,18 @@ async function run() {
   assert.deepEqual(await snapshot(), expected); evidence.checks.factoryPreservesRack = true;
   for (const width of [375, 768, 1280]) {
     await command("Emulation.setDeviceMetricsOverride", { width, height: 1000, deviceScaleFactor: 1, mobile: false });
+    await evaluate("document.getElementById('mod-sequencer').scrollIntoView({block:'start'})");
+    await sleep(100);
+    const performanceCapture = await command("Page.captureScreenshot", { format: "png" });
+    await writeFile(resolve(evidenceDir, `task-5-performance-${width}.png`), Buffer.from(performanceCapture.data, "base64"));
+    await evaluate("document.getElementById('mod-recorder').scrollIntoView({block:'start'})");
+    await sleep(100);
+    const recorderCapture = await command("Page.captureScreenshot", { format: "png" });
+    await writeFile(resolve(evidenceDir, `task-5-recorder-${width}.png`), Buffer.from(recorderCapture.data, "base64"));
     await evaluate("document.getElementById('mod-fx-delay').scrollIntoView({block:'start'})");
     await sleep(100);
-    evidence[`layout${width}`] = await evaluate(`({viewport:innerWidth,client:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth, offenders:[...document.querySelectorAll('body *')].map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,id:el.id,cls:el.className,left:r.left,right:r.right,width:r.width}}).filter(x=>x.right>innerWidth+0.5||x.left<-.5).slice(0,12)})`);
-    await check(`rackFits${width}`, "document.documentElement.scrollWidth <= innerWidth && [...document.querySelectorAll('.module-card button, .module-card canvas')].every(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; })");
+    evidence[`layout${width}`] = await evaluate(`({viewport:innerWidth,client:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth, offenders:[...document.querySelectorAll('body *')].filter(el=>!el.closest('.piano-roll-shell')).map(el=>{const r=el.getBoundingClientRect();return {tag:el.tagName,id:el.id,cls:el.className,left:r.left,right:r.right,width:r.width}}).filter(x=>x.right>document.documentElement.clientWidth+0.5||x.left<-.5).slice(0,12)})`);
+    await check(`rackFits${width}`, `document.documentElement.scrollWidth <= document.documentElement.clientWidth && [...document.querySelectorAll('.module-card button, .module-card canvas')].filter(el => !el.closest('.piano-roll-shell')).every(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= document.documentElement.clientWidth; }) && (${width} >= 1000 || document.querySelector('.piano-roll-shell').scrollWidth > document.querySelector('.piano-roll-shell').clientWidth)`);
     const capture = await command("Page.captureScreenshot", { format: "png" });
     await writeFile(resolve(evidenceDir, `task-5-rack-${width}.png`), Buffer.from(capture.data, "base64"));
   }

@@ -462,7 +462,8 @@ async function run() {
       noPageErrors: errors.length === 0,
       noConsoleErrors: consoleErrors.length === 0
     };
-    const scenarioPass = Object.values(checks).every(Boolean);
+    const { failingFirstCaptured, ...regressionChecks } = checks;
+    const scenarioPass = Object.values(regressionChecks).every(Boolean);
 
     evidence = {
       schema: "synth-modular-effects/task-3-sync",

@@ -27,10 +27,10 @@ Live: https://midi-synth.ew.codes — also reachable at the raw Cloud Run URL, h
 Everything lives in `index.html`: styles, markup, and the synth engine in one file, on purpose — this is meant to be copy-pastable and hackable without a toolchain. The rough shape:
 
 - **`P`** — a single flat object holding every synth parameter (oscillators, filter, envelopes, LFO, poly-mod, wheel, glide/unison, master). This is the source of truth; UI controls read from and write to it.
-- **Audio graph** — built once against a `Web Audio` `AudioContext` (osc A/B + noise → mixer → filter → amp env → master), with a per-voice envelope generator for filter and amp.
+- **Audio graph** — each voice follows osc A/B + noise → mixer → filter → amp envelope, then enters the optional shared effects rack; recorder playback creates an isolated synth/effects context for each track.
 - **Concentric dial UI** — each module card renders its knobs as concentric arcs on a `<canvas>`, driven by the same `P` values; there's no separate widget library.
 - **Module registry and routing** — the rack owns module availability and ordering; oscillator, mixer, modulation, and effect routing update when modules are added or removed.
-- **Effects rack** — removable delay, chorus, distortion, phaser, and reverb modules are inserted into the shared output path in their visible rack order.
+- **Effects rack** — removable delay, reverb, drive, and chorus modules are inserted into the shared output path in their visible rack order.
 - **`factoryPresets`** (near the end of the script) — a plain object of `{ name: { ...paramValues } }`. `applyPreset()` merges a preset into `P`, updates every input/select/toggle to match, and redraws the dials.
 - **`presetCategories`** — an ordered map of category label → preset names, used only to group the dropdown. A preset not listed there falls back to an "Outros" group, so nothing silently disappears.
 - **MIDI Learn** — `ccMaps` holds CC-number → parameter-name mappings per bank; `onMIDIMessage` looks up the mapping and writes straight into `P`. Click a "LRN" button, turn a knob, done.
@@ -50,6 +50,8 @@ Connect a MIDI controller before loading the page (browsers only enumerate devic
 Browser regression checks live under `test/` and launch an instrumented Chromium session:
 
 ```bash
+node --test test/cdp-harness.test.mjs
+node test/browser-baseline.mjs
 node test/effects-browser.mjs
 node test/lfo-browser.mjs
 node test/sync-browser.mjs

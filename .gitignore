@@ -10,3 +10,5 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+.omo/
+.test-tmp/

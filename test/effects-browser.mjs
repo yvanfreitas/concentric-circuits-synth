@@ -1,29 +1,16 @@
-import { readFile, writeFile, mkdir, rm } from "node:fs/promises";
-import { createServer } from "node:http";
-import { spawn, spawnSync } from "node:child_process";
+import { writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import assert from "node:assert/strict";
 
+import { sleep, waitForCondition, withBrowserHarness } from "./cdp-harness.mjs";
+
 const root = resolve(import.meta.dirname, "..");
 const evidenceDir = resolve(root, ".omo/evidence/synth-modular-effects");
-const profile = resolve(root, `.omo/effects-browser-profile-${process.pid}`);
-const port = 19468;
-const sleep = ms => new Promise(done => setTimeout(done, ms));
 const evidence = { capturedAt: new Date().toISOString(), checks: {}, signal: {}, errors: [] };
-let server, chrome, ws;
-const pending = new Map();
-let nextId = 0;
-function command(method, params = {}) {
-  return new Promise((resolveCommand, reject) => {
-    const id = ++nextId;
-    pending.set(id, { resolve: resolveCommand, reject });
-    ws.send(JSON.stringify({ id, method, params }));
-  });
-}
+let page;
+const command = (method, params = {}) => page.command(method, params);
 async function evaluate(expression) {
-  const result = await command("Runtime.evaluate", { expression, returnByValue: true, awaitPromise: true, userGesture: true });
-  if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
-  return result.result.value;
+  return page.evaluate(expression);
 }
 const click = id => evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
 const snapshot = () => evaluate("effectRack.serialize()");
@@ -34,51 +21,87 @@ async function check(name, expression) {
 }
 async function load(url) {
   await command("Page.navigate", { url });
-  await sleep(500);
-  for (let i = 0; i < 100; i++) {
-    try { if (await evaluate("document.readyState === 'complete' && typeof effectRack !== 'undefined' && !!document.getElementById('addEffect')")) { await evaluate('hardSyncEngine.readyPromise'); return; } } catch {}
-    await sleep(100);
-  }
-  throw new Error("Application failed to load");
+  const loaded = await waitForCondition(page, "document.readyState === 'complete' && typeof effectRack !== 'undefined' && !!document.getElementById('addEffect')", 10_000);
+  if (!loaded) throw new Error("Application failed to load");
+  await evaluate("hardSyncEngine.readyPromise");
 }
 async function run() {
   await mkdir(evidenceDir, { recursive: true });
-  server = createServer(async (req, res) => {
-    if (req.url === "/favicon.ico") { res.writeHead(204); res.end(); return; }
-    res.setHeader("content-type", "text/html; charset=utf-8");
-    res.end(await readFile(resolve(root, "index.html")));
-  });
-  await new Promise(done => server.listen(0, "127.0.0.1", done));
-  const url = `http://127.0.0.1:${server.address().port}/index.html`;
-  chrome = spawn(process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe", ["--headless=new", `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"], { windowsHide: true, stdio: "ignore" });
-  let target;
-  for (let i = 0; i < 100; i++) {
-    try { target = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json(); break; } catch { await sleep(100); }
-  }
-  ws = new WebSocket(target.webSocketDebuggerUrl);
-  await new Promise(done => ws.addEventListener("open", done, { once: true }));
-  ws.addEventListener("message", event => {
-    const message = JSON.parse(event.data);
-    if (message.id) {
-      const handler = pending.get(message.id); pending.delete(message.id);
-      if (message.error) handler.reject(new Error(message.error.message)); else handler.resolve(message.result);
-    } else if (message.method === "Runtime.exceptionThrown") evidence.errors.push(message.params.exceptionDetails);
-    else if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error") evidence.errors.push(message.params);
-  });
-  await command("Runtime.enable"); await command("Page.enable");
-  await load(url);
+  return withBrowserHarness({ root }, async harness => {
+    page = harness.page;
+    const url = `${harness.origin}/index.html`;
+    await load(url);
   await check("initiallyDry", "effectRack.serialize().modules.length === 0");
   await check("midiModulesSeparated", "!!document.getElementById('mod-midi') && !!document.getElementById('mod-midi-bindings') && !!document.getElementById('mod-midi-monitor') && !document.querySelector('#mod-midi #ccList') && !document.querySelector('#mod-midi #log')");
   await check("moduleHeaderDesign", "!document.querySelector('.module-subtitle') && getComputedStyle(document.querySelector('.module-title')).fontSize === '13px' && getComputedStyle(document.querySelector('.module-title')).fontWeight === '700' && getComputedStyle(document.querySelector('.drag-handle')).height === '0px' && getComputedStyle(document.querySelector('.drag-handle')).marginBottom === '-12px'");
   await evaluate(`document.querySelector('#row-resonance .learn-btn').click(); onMIDIMessage({data:new Uint8Array([0xB0,1,99])});`);
   await check("learnUpdatesBindings", "ccMaps[activeBank][1] === 'resonance' && document.querySelector('#ccList [data-cc=\"1\"]')?.textContent.includes('Reson.') && document.getElementById('log').textContent.includes('Mapped CC 1 to resonance')");
   await check("performanceModulesFullWidth", "['mod-sequencer','mod-recorder'].every(id => document.getElementById(id)?.classList.contains('performance-module'))");
+  await evaluate(`(() => {
+    allNotesOff();
+    noteOn(60, 100, "live");
+    noteOn(60, 100, "sequencer");
+    noteOff(60, "sequencer");
+    const liveSurvived = noteToVoiceIds.get(noteVoiceKey(60, "live"))?.length === 1;
+    const sequencerReleased = !noteToVoiceIds.has(noteVoiceKey(60, "sequencer"));
+    noteOn(62, 100, "sequencer");
+    noteOn(62, 100, "sequencer");
+    noteOff(62, "sequencer");
+    const repeatedPitchSurvived = noteToVoiceIds.get(noteVoiceKey(62, "sequencer"))?.length === 1;
+    const pendingKey = noteVoiceKey(63, "sequencer");
+    pendingNotes.set(pendingKey, [{ note: 63 }, { note: 63 }]);
+    noteOff(63, "sequencer");
+    const pendingPitchSurvived = pendingNotes.get(pendingKey)?.length === 1;
+    pendingNotes.delete(pendingKey);
+    noteOff(62, "sequencer");
+    noteOff(60, "live");
+    window.__voiceIsolation = { liveSurvived, sequencerReleased, repeatedPitchSurvived, pendingPitchSurvived };
+  })()`);
+  await check("noteInstancesStayIsolated", "__voiceIsolation.liveSurvived && __voiceIsolation.sequencerReleased && __voiceIsolation.repeatedPitchSurvived && __voiceIsolation.pendingPitchSurvived");
+  await evaluate(`(() => {
+    const source = { P: { ...P }, octave: 0, effects: { version: 1, modules: [] }, modules: ['mod-oscB', 'not-a-module', 'mod-oscB'], modulesVersion: 3 };
+    const normalized = cloneRecorderPatch(source);
+    const fallback = cloneRecorderPatch({ ...source, modules: null });
+    window.__patchNormalization = { normalized: normalized.modules, fallback: fallback.modules };
+  })()`);
+  await check("recorderPatchModulesValidated", "__patchNormalization.normalized.join(',') === 'mod-oscB' && Array.isArray(__patchNormalization.fallback) && __patchNormalization.fallback.length === Object.keys(SYNTH_MODULES).length && __patchNormalization.fallback.every(id => Object.hasOwn(SYNTH_MODULES, id))");
+  await evaluate(`new Promise(resolve => {
+    const track = armedRecorderTrack();
+    track.events = []; track.duration = 0;
+    midiRecorderState.recording = true; midiRecorderState.startedAt = performance.now();
+    renderMidiRecorder();
+    const before = document.querySelector('[data-track="' + track.id + '"] .track-meta').textContent;
+    for (let index = 0; index < 20; index++) captureMidiRecorderEvent(index % 2 ? 'off' : 'on', 60 + index % 4, 100, 'live');
+    const during = document.querySelector('[data-track="' + track.id + '"] .track-meta').textContent;
+    const scheduled = typeof recorderRenderFrame !== 'undefined' && recorderRenderFrame !== null;
+    midiRecorderState.recording = false;
+    requestAnimationFrame(() => {
+      const after = document.querySelector('[data-track="' + track.id + '"] .track-meta').textContent;
+      window.__recorderRenderCoalescing = { before, during, after, scheduled, events: track.events.length };
+      resolve();
+    });
+  })`);
+  await check("recorderRenderingCoalesced", "__recorderRenderCoalescing.scheduled && __recorderRenderCoalescing.before === __recorderRenderCoalescing.during && __recorderRenderCoalescing.after.includes('20') && __recorderRenderCoalescing.events === 20");
+  await evaluate(`restoreSequencer({ bpm: 120, gate: 75, selected: 0, steps: [{ active: true, note: 0, velocity: 100 }] });`);
+  await check("restoredSequencerNotesStayVisible", "sequencerState.steps[0].note === 36 && document.querySelector('#seqRoll [data-step=\"0\"][data-note=\"36\"]')?.classList.contains('active')");
+  await evaluate(`restoreSequencer({ bpm: 120, gate: 75, selected: 0, steps: Array.from({ length: 16 }, (_, index) => ({ active: index % 4 === 0, note: 60, velocity: 100 })) });`);
   await evaluate(`document.querySelector('#seqRoll [data-step="0"][data-note="64"]').click(); document.getElementById('seqVelocity').value='111'; document.getElementById('seqVelocity').dispatchEvent(new Event('change')); const cutoff=document.getElementById('cutoff'); cutoff.value='4321'; cutoff.dispatchEvent(new Event('input')); startMidiRecording(); onMIDIMessage({data:new Uint8Array([0x90,64,111])}); onMIDIMessage({data:new Uint8Array([0x80,64,0])}); stopMidiRecorder(); addMidiRecorderTrack(); cutoff.value='8000'; cutoff.dispatchEvent(new Event('input')); document.querySelector('#mod-oscB .module-remove').click(); startMidiRecording(); onMIDIMessage({data:new Uint8Array([0x90,67,96])}); onMIDIMessage({data:new Uint8Array([0x80,67,0])}); stopMidiRecorder(); document.querySelector('[data-track="1"]').click();`);
   await check("sequencerAndRecorderEdit", "sequencerState.steps[0].active && sequencerState.steps[0].note === 64 && sequencerState.steps[0].velocity === 111 && document.querySelectorAll('#seqKeyboard .piano-key').length === 49 && document.querySelectorAll('#seqRoll .piano-cell').length === 784 && document.querySelector('#seqRoll [data-step=\"0\"][data-note=\"64\"]')?.classList.contains('active') && getComputedStyle(document.querySelector('#seqKeyboard .piano-key')).backgroundImage.includes('gradient') && document.querySelector('#seqKeyboard .piano-key.black').getBoundingClientRect().width < document.querySelector('#seqKeyboard .piano-key:not(.black)').getBoundingClientRect().width && midiRecorderState.tracks.length === 2 && midiRecorderState.tracks.every(track => track.events.length === 2) && midiRecorderState.activeTrackId === 1 && document.querySelector('[data-track=\"1\"] .track-preview rect') && P.cutoff === 4321 && isModuleActive('mod-oscB')");
   await evaluate(`document.getElementById('seqLength').value='24'; document.getElementById('seqLength').dispatchEvent(new Event('change'));`);
   await check("sequencerRollLengthEditable", "sequencerState.steps.length === 24 && document.querySelectorAll('#seqRoll .piano-cell').length === 1176 && document.getElementById('seqLength').value === '24' && sequencerState.steps[0].note === 64");
   await evaluate(`document.getElementById('cutoff').value='5555'; document.getElementById('cutoff').dispatchEvent(new Event('input'));`);
   await check("armedTrackFollowsSynthEdits", "P.cutoff === 5555 && midiRecorderState.tracks.find(track => track.id === 1)?.patch?.P?.cutoff === 5555");
+  await evaluate(`(() => {
+    const first = midiRecorderState.tracks[0], second = midiRecorderState.tracks[1];
+    window.__savedDenseEvents = first.events; window.__savedDenseDuration = first.duration; window.__savedDenseMute = second.mute;
+    first.events = Array.from({ length: 200 }, (_, index) => ({ time: index * 10, type: index % 2 ? 'off' : 'on', note: 60 + index % 4, velocity: index % 2 ? 0 : 100 }));
+    first.duration = 2000; second.mute = true;
+    playMidiRecording();
+    window.__recorderScheduler = { timerCount: recorderTimers.length, playing: midiRecorderState.playing };
+    stopMidiRecorder(false);
+    first.events = window.__savedDenseEvents; first.duration = window.__savedDenseDuration; second.mute = window.__savedDenseMute;
+  })()`);
+  await check("recorderPlaybackUsesBoundedScheduler", "__recorderScheduler.playing && __recorderScheduler.timerCount === 1");
   await evaluate(`new Promise(resolve => { playMidiRecording(); setTimeout(() => { window.__recorderPlaybackProof = { voices: [...voices.values()].filter(voice => voice.playback).map(voice => ({ trackId: voice.playback.trackId, cutoff: voice.params.cutoff, oscB: voice.playback.patch.modules.includes('mod-oscB') })), contexts: recorderPlaybackContexts.length, isolatedInputs: new Set(recorderPlaybackContexts.map(context => context.input)).size, selectedCutoff: P.cutoff }; stopMidiRecorder(); resolve(); }, 100); })`);
   await check("recorderTracksKeepOwnPatches", "__recorderPlaybackProof.contexts === 2 && __recorderPlaybackProof.isolatedInputs === 2 && __recorderPlaybackProof.selectedCutoff === 5555 && __recorderPlaybackProof.voices.some(voice => voice.trackId === 1 && voice.cutoff === 5555 && voice.oscB) && __recorderPlaybackProof.voices.some(voice => voice.trackId === 2 && voice.cutoff === 8000 && !voice.oscB)");
   evidence.signal = await evaluate(`(async () => {
@@ -119,11 +142,14 @@ async function run() {
   await sleep(100);
   await check("orderAndParameters", "effectRack.serialize().modules.map(m=>m.type).join(',') === 'delay,reverb,chorus,drive' && effectRack.serialize().modules[0].params.feedback === .65 && !effectRack.serialize().modules[3].enabled");
   await evaluate(`document.querySelector('#mod-oscB .module-remove').click();`);
-  await check("adaptiveModules", "!isModuleActive('mod-oscB') && !document.getElementById('mod-oscB') && getComputedStyle(document.getElementById('lfoToOscB')).display === 'none' && !document.getElementById('row-mixB') && window.dialInstances.find(d=>d.canvasId==='canvas-mixer').paramIds.join(',') === 'mixA,mixNoise' && window.dialInstances.find(d=>d.canvasId==='canvas-polymod').paramIds.join(',') === 'polyFilterEnvAmt' && getComputedStyle(document.querySelector('#mod-polymod tr[data-source=\"osc-b\"]')).display === 'none'");
+  await check("adaptiveModules", "!isModuleActive('mod-oscB') && !document.getElementById('mod-oscB') && getComputedStyle(document.getElementById('lfoToOscB')).display === 'none' && !document.getElementById('row-mixB') && window.dialInstances.find(d=>d.canvasId==='canvas-mixer').paramIds.join(',') === 'mixA,mixNoise' && window.dialInstances.find(d=>d.canvasId==='canvas-polymod').paramIds.join(',') === 'polyFilterEnvAmt' && getComputedStyle(document.querySelector('#mod-polymod tr[data-source=\"osc-b\"]')).display === 'none' && getComputedStyle(document.querySelector('#mod-polymod tr[data-source=\"filter-envelope\"]')).display === 'table-row'");
   await evaluate(`document.querySelector('#mod-lfo .module-remove').click();`);
   await check("wheelAdaptsToLfo", "!isModuleActive('mod-lfo') && synthModuleCards.get('mod-wheelmod').classList.contains('module-unavailable')");
   await evaluate(`for (const id of ['mod-oscB','mod-lfo']) { const add=document.getElementById('addEffect'); add.value=id; add.dispatchEvent(new Event('change')); }`);
   await check("modulesReadded", "isModuleActive('mod-oscB') && isModuleActive('mod-lfo') && !!document.getElementById('mod-oscB') && !document.getElementById('row-mixB').hidden");
+  await evaluate(`document.querySelector('#mod-filterEnv .module-remove').click();`);
+  await check("filterEnvelopeDependenciesAdapt", "!isModuleActive('mod-filterEnv') && getComputedStyle(document.querySelector('#mod-polymod tr[data-source=\"filter-envelope\"]')).display === 'none' && getComputedStyle(document.querySelector('#mod-polymod tr[data-source=\"osc-b\"]')).display === 'table-row'");
+  await evaluate(`const add=document.getElementById('addEffect'); add.value='mod-filterEnv'; add.dispatchEvent(new Event('change'));`);
   await evaluate(`localStorage.setItem('prophet_concentric_layout_order', JSON.stringify([...document.querySelectorAll('#mainGrid > .module-card')].map(card => card.id).filter(id => !['mod-midi-bindings','mod-midi-monitor'].includes(id))))`);
   await load(url + "?legacy-layout=1");
   await check("legacyMidiLayoutMigrated", "(() => { const ids=[...document.querySelectorAll('#mainGrid > .module-card')].map(card=>card.id), midi=ids.indexOf('mod-midi'); return ids[midi+1] === 'mod-midi-bindings' && ids[midi+2] === 'mod-midi-monitor'; })()");
@@ -165,17 +191,21 @@ async function run() {
   await evaluate(`const saved = JSON.parse(localStorage.getItem('prophet_concentric_active_state')); saved.effects = {version:1,modules:[{type:'not-an-effect',enabled:true,params:{}}]}; localStorage.setItem('prophet_concentric_active_state', JSON.stringify(saved));`);
   await load(url + "?malformed=1");
   await check("malformedSafe", "effectRack.serialize().modules.length === 0 && validateEffectsState({version:1,modules:[{type:'delay',enabled:true,params:{time:null,feedback:.5,mix:.5}}]}).modules.length === 0");
-  assert.equal(evidence.errors.length, 0); evidence.checks.noBrowserErrors = true;
+    const browserEvents = page.drainEvents();
+    evidence.errors.push(...browserEvents.filter(event => event.type === "pageerror").map(event => event.value));
+    evidence.errors.push(...browserEvents.filter(event => event.type === "console" && event.value.level === "error").map(event => event.raw));
+    assert.equal(evidence.errors.length, 0); evidence.checks.noBrowserErrors = true;
+  });
 }
-try { await run(); evidence.pass = true; }
-catch (error) { evidence.pass = false; evidence.failure = error.stack; process.exitCode = 1; }
+let cleanup;
+try { const result = await run(); cleanup = result.cleanup; evidence.pass = true; }
+catch (error) { cleanup = error.harnessCleanup; evidence.pass = false; evidence.failure = error.stack; process.exitCode = 1; }
 finally {
-  if (ws) { await command("Browser.close").catch(() => {}); ws.close(); }
-  if (chrome?.pid) { spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" }); chrome.kill(); }
-  if (server) { server.closeAllConnections(); await new Promise(done => server.close(done)); }
-  await sleep(300);
-  await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-  evidence.cleanup = { serverClosed: true, chromeClosed: true, profileRemoved: true };
+  evidence.cleanup = {
+    serverClosed: cleanup?.completed.server === true,
+    chromeClosed: cleanup?.completed.browser === true && cleanup?.completed.page === true,
+    profileRemoved: cleanup?.completed.profile === true
+  };
   await writeFile(resolve(evidenceDir, "task-4-rack-dsp.json"), JSON.stringify(evidence, null, 2));
   await writeFile(resolve(evidenceDir, "task-5-rack-ui.json"), JSON.stringify(evidence, null, 2));
   console.log(JSON.stringify(evidence, null, 2));

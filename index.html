@@ -330,6 +330,7 @@ select#presetSelect optgroup {
 
 /* Drag Handle */
 .drag-handle {
+  position: relative;
   width: 100%;
   height: 0px;
   display: flex;
@@ -348,6 +349,11 @@ select#presetSelect optgroup {
   height: 5px;
   background-image: radial-gradient(var(--text-muted) 1.5px, transparent 1.5px);
   background-size: 5px 5px;
+}
+.drag-handle::after {
+  content: "";
+  position: absolute;
+  inset: -12px 0;
 }
 
 .module-header {
@@ -1226,18 +1232,18 @@ input[type="range"].hidden-range {
       <div class="poly-matrix-container">
         <table class="poly-matrix">
           <thead>
-            <tr data-source="filter-envelope">
+            <tr>
               <th>Source</th><th>Osc A Freq</th><th>Osc A PW</th><th>Filter</th>
             </tr>
           </thead>
           <tbody>
-            <tr data-source="osc-b">
+            <tr data-source="filter-envelope">
               <td>Filt Env</td>
               <td><input type="checkbox" id="polyFE_freqA"></td>
               <td><input type="checkbox" id="polyFE_pw"></td>
               <td><input type="checkbox" id="polyFE_filter"></td>
             </tr>
-            <tr>
+            <tr data-source="osc-b">
               <td>Osc B</td>
               <td><input type="checkbox" id="polyOB_freqA"></td>
               <td><input type="checkbox" id="polyOB_pw"></td>
@@ -2510,9 +2516,9 @@ const synthModuleCards = new Map();
 function isModuleActive(id) { return !Object.hasOwn(SYNTH_MODULES, id) || activeSynthModules.has(id); }
 function getActiveSynthModules() { return [...activeSynthModules]; }
 function migrateModuleSelection(ids, version) {
-  if (version === 3 || !Array.isArray(ids)) return ids;
-  const additions = version === 2 ? ["mod-sequencer", "mod-recorder"] : ["mod-midi-bindings", "mod-midi-monitor", "mod-sequencer", "mod-recorder"];
-  return [...new Set([...ids, ...additions])];
+  const source = Array.isArray(ids) ? ids : Object.keys(SYNTH_MODULES);
+  const additions = version === 3 ? [] : version === 2 ? ["mod-sequencer", "mod-recorder"] : ["mod-midi-bindings", "mod-midi-monitor", "mod-sequencer", "mod-recorder"];
+  return [...new Set([...source, ...additions].filter(id => Object.hasOwn(SYNTH_MODULES, id)))];
 }
 
 function syncModuleDependencies() {
@@ -3331,7 +3337,7 @@ function updatePolyBadge() {
 const noteToVoiceIds = new Map();
 const pendingNotes = new Map();
 
-function noteVoiceKey(note, source) { return source.startsWith("recorder:") ? `${source}:${note}` : note; }
+function noteVoiceKey(note, source) { return source === "live" ? note : `${source}:${note}`; }
 function createVoiceForPlayback(note, velocity, detune, playback) {
   if (!playback) return createVoice(note, velocity, detune);
   const previousParams = { ...P }, previousOctave = octaveShift, previousModules = [...activeSynthModules];
@@ -3361,9 +3367,12 @@ function noteOn(note, velocity, source = "live", playback = null) {
     });
   }
   if (!hardSyncEngine.ready && !hardSyncEngine.error) {
-    pendingNotes.set(noteKey, { note, velocity, source, playback });
+    const queue = pendingNotes.get(noteKey) || [];
+    queue.push({ note, velocity, source, playback }); pendingNotes.set(noteKey, queue);
     hardSyncEngine.readyPromise.then(() => {
-      if (pendingNotes.has(noteKey)) { const pending = pendingNotes.get(noteKey); pendingNotes.delete(noteKey); noteOn(pending.note, pending.velocity, pending.source, pending.playback); }
+      const queued = pendingNotes.get(noteKey), pending = queued?.shift();
+      if (!queued?.length) pendingNotes.delete(noteKey);
+      if (pending) noteOn(pending.note, pending.velocity, pending.source, pending.playback);
     });
     return;
   }
@@ -3384,7 +3393,8 @@ function noteOn(note, velocity, source = "live", playback = null) {
       nextUnison.push(v.id);
     }
     if (playback) playback.unisonVoiceIds = nextUnison; else unisonVoiceIds = nextUnison;
-    noteToVoiceIds.set(noteKey, nextUnison.slice());
+    const groups = noteToVoiceIds.get(noteKey) || [];
+    groups.push(nextUnison.slice()); noteToVoiceIds.set(noteKey, groups);
     return;
   }
 
@@ -3396,20 +3406,25 @@ function noteOn(note, velocity, source = "live", playback = null) {
     if (oldest) releaseVoice(oldest, true); // Fast release to avoid polyphonic overlap
   }
   const v = createVoiceForPlayback(note, velocity, 0, playback);
-  const list = noteToVoiceIds.get(noteKey) || [];
-  list.push(v.id);
-  noteToVoiceIds.set(noteKey, list);
+  const groups = noteToVoiceIds.get(noteKey) || [];
+  groups.push([v.id]); noteToVoiceIds.set(noteKey, groups);
 }
 
 function noteOff(note, source = "live") {
   captureMidiRecorderEvent("off", note, 0, source);
   const noteKey = noteVoiceKey(note, source);
-  pendingNotes.delete(noteKey);
-  const list = noteToVoiceIds.get(noteKey);
+  const pendingQueue = pendingNotes.get(noteKey);
+  if (pendingQueue?.length) {
+    pendingQueue.shift();
+    if (pendingQueue.length) pendingNotes.set(noteKey, pendingQueue); else pendingNotes.delete(noteKey);
+  }
+  const groups = noteToVoiceIds.get(noteKey), list = groups?.shift();
   if (!list) return;
   list.forEach(id => { const v = voices.get(id); if (v) releaseVoice(v, false); });
-  noteToVoiceIds.delete(noteKey);
-  if (isModuleActive("mod-glide") && P.unisonOn) unisonVoiceIds = unisonVoiceIds.filter(id => !list.includes(id));
+  if (groups.length) noteToVoiceIds.set(noteKey, groups); else noteToVoiceIds.delete(noteKey);
+  const playback = list.map(id => voices.get(id)?.playback).find(Boolean);
+  if (playback) playback.unisonVoiceIds = playback.unisonVoiceIds.filter(id => !list.includes(id));
+  else if (isModuleActive("mod-glide") && P.unisonOn) unisonVoiceIds = unisonVoiceIds.filter(id => !list.includes(id));
 }
 
 function allNotesOff() {
@@ -3653,7 +3668,9 @@ const sequencerState = {
 };
 const pianoRollNotes = Array.from({ length: 49 }, (_, index) => 84 - index);
 let sequencerTimer = null;
-const sequencerNotes = new Set();
+const sequencerNotes = new Map();
+const sequencerGateTimers = new Set();
+let renderedSequencerColumn = -1;
 function midiNoteName(note) {
   const names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   return `${names[note % 12]}${Math.floor(note / 12) - 1}`;
@@ -3666,7 +3683,10 @@ function restoreSequencer(value) {
   sequencerState.bpm = clamp(Number(value.bpm) || 120, 40, 240);
   sequencerState.gate = clamp(Number(value.gate) || 75, 10, 100);
   sequencerState.selected = clamp(Number(value.selected) || 0, 0, value.steps.length - 1);
-  sequencerState.steps = value.steps.map(step => ({ active: !!step.active, note: clamp(Number(step.note) || 60, 0, 127), velocity: clamp(Number(step.velocity) || 100, 1, 127) }));
+  sequencerState.steps = value.steps.map(step => {
+    const note = Number(step.note), velocity = Number(step.velocity);
+    return { active: !!step.active, note: clamp(Number.isFinite(note) ? note : 60, 36, 84), velocity: clamp(Number.isFinite(velocity) && velocity > 0 ? velocity : 100, 1, 127) };
+  });
   renderSequencer();
 }
 function setSequencerLength(length) {
@@ -3681,9 +3701,11 @@ function setSequencerLength(length) {
   if (sequencerState.current >= nextLength) sequencerState.current = -1;
 }
 function renderSequencerPlayhead() {
-  document.querySelectorAll("#seqRoll .piano-cell").forEach(cell => {
-    cell.classList.toggle("current", sequencerState.current === Number(cell.dataset.step));
-  });
+  if (renderedSequencerColumn !== sequencerState.current) {
+    if (renderedSequencerColumn >= 0) document.querySelectorAll(`#seqRoll [data-step="${renderedSequencerColumn}"]`).forEach(cell => cell.classList.remove("current"));
+    if (sequencerState.current >= 0) document.querySelectorAll(`#seqRoll [data-step="${sequencerState.current}"]`).forEach(cell => cell.classList.add("current"));
+    renderedSequencerColumn = sequencerState.current;
+  }
   document.getElementById("seqPlay")?.classList.toggle("on", sequencerState.running);
 }
 function renderSequencer() {
@@ -3711,12 +3733,14 @@ function renderSequencer() {
   document.getElementById("seqGate").value = sequencerState.gate;
   document.getElementById("seqNote").value = sequencerState.steps[sequencerState.selected].note;
   document.getElementById("seqVelocity").value = sequencerState.steps[sequencerState.selected].velocity;
+  renderedSequencerColumn = -1;
   renderSequencerPlayhead();
 }
 function stopSequencer() {
   sequencerState.running = false;
   clearTimeout(sequencerTimer); sequencerTimer = null;
-  sequencerNotes.forEach(note => noteOff(note, "sequencer")); sequencerNotes.clear();
+  sequencerGateTimers.forEach(clearTimeout); sequencerGateTimers.clear();
+  sequencerNotes.forEach((count, note) => { for (let index = 0; index < count; index++) noteOff(note, "sequencer"); }); sequencerNotes.clear();
   sequencerState.current = -1; renderSequencerPlayhead();
 }
 function clearSequencer() {
@@ -3731,8 +3755,14 @@ function sequencerTick() {
   const step = sequencerState.steps[sequencerState.current];
   const interval = 60000 / sequencerState.bpm / 4;
   if (step.active) {
-    noteOn(step.note, step.velocity, "sequencer"); sequencerNotes.add(step.note);
-    setTimeout(() => { noteOff(step.note, "sequencer"); sequencerNotes.delete(step.note); }, interval * sequencerState.gate / 100);
+    noteOn(step.note, step.velocity, "sequencer"); sequencerNotes.set(step.note, (sequencerNotes.get(step.note) || 0) + 1);
+    const gateTimer = setTimeout(() => {
+      noteOff(step.note, "sequencer");
+      const remaining = (sequencerNotes.get(step.note) || 1) - 1;
+      if (remaining > 0) sequencerNotes.set(step.note, remaining); else sequencerNotes.delete(step.note);
+      sequencerGateTimers.delete(gateTimer);
+    }, interval * sequencerState.gate / 100);
+    sequencerGateTimers.add(gateTimer);
   }
   renderSequencerPlayhead();
   sequencerTimer = setTimeout(sequencerTick, interval);
@@ -3782,6 +3812,7 @@ let applySynthParameters = null;
 const midiRecorderState = { recording: false, playing: false, startedAt: 0, activeTrackId: 1, tracks: [{ id: 1, name: "Track 1", armed: true, mute: false, solo: false, events: [], duration: 0, patch: null }] };
 let recorderTimers = [];
 let recorderPlaybackContexts = [];
+let recorderRenderFrame = null;
 function cloneRecorderPatch(patch) {
   if (!patch || !patch.P || typeof patch.P !== "object") return null;
   return { P: { ...patch.P }, octave: clamp(Number(patch.octave) || 0, -2, 2), effects: validateEffectsState(patch.effects), modules: migrateModuleSelection(patch.modules, patch.modulesVersion), modulesVersion: 3 };
@@ -3824,7 +3855,7 @@ function captureMidiRecorderEvent(type, note, velocity = 0, source = "live") {
   const track = armedRecorderTrack(); if (!track) return;
   const time = Math.max(0, performance.now() - midiRecorderState.startedAt);
   track.events.push({ time, type, note, velocity }); track.duration = Math.max(track.duration, time);
-  renderMidiRecorder();
+  scheduleMidiRecorderRender();
 }
 function createRecorderPlaybackContext(track) {
   const patch = cloneRecorderPatch(track.patch) || captureSynthPatch();
@@ -3855,6 +3886,37 @@ function startMidiRecording() {
   midiRecorderState.recording = true; midiRecorderState.startedAt = performance.now();
   document.getElementById("recStatus").textContent = `Recording ${track.name}`; renderMidiRecorder();
 }
+function scheduleRecorderTimer(callback, delay) {
+  const timer = setTimeout(() => {
+    recorderTimers = recorderTimers.filter(active => active !== timer);
+    callback();
+  }, Math.max(0, delay));
+  recorderTimers = [timer];
+}
+function scheduleRecorderPlayback(events, contexts, duration, startDelay) {
+  const startedAt = performance.now() + startDelay;
+  let cursor = 0;
+  const tick = () => {
+    if (!midiRecorderState.playing) return;
+    const elapsed = Math.max(0, performance.now() - startedAt);
+    while (cursor < events.length && events[cursor].time <= elapsed + 1) {
+      const event = events[cursor++], playback = contexts.get(event.trackId), source = `recorder:${event.trackId}`;
+      if (event.type === "on") noteOn(event.note, event.velocity, source, playback);
+      else noteOff(event.note, source);
+    }
+    if (cursor < events.length) {
+      scheduleRecorderTimer(tick, Math.min(25, Math.max(0, events[cursor].time - elapsed)));
+      return;
+    }
+    scheduleRecorderTimer(() => {
+      midiRecorderState.playing = false;
+      document.getElementById("recStatus").textContent = "Ready";
+      renderMidiRecorder();
+      scheduleRecorderTimer(disposeRecorderPlaybackContexts, 3000);
+    }, Math.max(0, duration - elapsed) + 100);
+  };
+  scheduleRecorderTimer(tick, startDelay);
+}
 function playMidiRecording() {
   stopMidiRecorder(); midiRecorderState.playing = true;
   const hasSolo = midiRecorderState.tracks.some(track => track.solo);
@@ -3863,13 +3925,8 @@ function playMidiRecording() {
   const contexts = new Map(recorderPlaybackContexts.map(playback => [playback.trackId, playback]));
   const events = tracks.flatMap(track => track.events.map(event => ({ ...event, trackId: track.id }))).sort((a, b) => a.time - b.time);
   const startDelay = 40;
-  events.forEach(event => {
-    const playback = contexts.get(event.trackId), source = `recorder:${event.trackId}`;
-    recorderTimers.push(setTimeout(() => event.type === "on" ? noteOn(event.note, event.velocity, source, playback) : noteOff(event.note, source), event.time + startDelay));
-  });
   const duration = Math.max(0, ...tracks.map(track => track.duration));
-  recorderTimers.push(setTimeout(() => { midiRecorderState.playing = false; document.getElementById("recStatus").textContent = "Ready"; renderMidiRecorder(); }, duration + startDelay + 100));
-  recorderTimers.push(setTimeout(disposeRecorderPlaybackContexts, duration + startDelay + 3000));
+  scheduleRecorderPlayback(events, contexts, duration, startDelay);
   document.getElementById("recStatus").textContent = events.length ? "Playing" : "No events"; renderMidiRecorder();
 }
 function addMidiRecorderTrack() {
@@ -3904,6 +3961,7 @@ function escapeHtmlText(value) {
   return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
 }
 function renderMidiRecorder() {
+  if (recorderRenderFrame !== null) { cancelAnimationFrame(recorderRenderFrame); recorderRenderFrame = null; }
   const list = document.getElementById("recTracks"); if (!list) return;
   list.innerHTML = midiRecorderState.tracks.map(track => {
     const name = escapeHtmlText(track.name);
@@ -3911,6 +3969,13 @@ function renderMidiRecorder() {
   }).join("");
   document.getElementById("recRecord").classList.toggle("on", midiRecorderState.recording);
   document.getElementById("recPlay").classList.toggle("on", midiRecorderState.playing);
+}
+function scheduleMidiRecorderRender() {
+  if (recorderRenderFrame !== null) return;
+  recorderRenderFrame = requestAnimationFrame(() => {
+    recorderRenderFrame = null;
+    renderMidiRecorder();
+  });
 }
 function initMidiRecorder() {
   document.getElementById("recRecord").addEventListener("click", startMidiRecording);
@@ -3930,7 +3995,11 @@ function initMidiRecorder() {
     if (action === "clear" && confirm(`Clear all MIDI events from ${track.name}?`)) {
       stopMidiRecorder(false); track.events = []; track.duration = 0;
     }
-    if (action === "remove" && midiRecorderState.tracks.length > 1) { midiRecorderState.tracks = midiRecorderState.tracks.filter(item => item.id !== id); if (midiRecorderState.activeTrackId === id) midiRecorderState.activeTrackId = midiRecorderState.tracks[0].id; }
+    if (action === "remove" && midiRecorderState.tracks.length > 1) {
+      const removingActive = midiRecorderState.activeTrackId === id;
+      midiRecorderState.tracks = midiRecorderState.tracks.filter(item => item.id !== id);
+      if (removingActive) { selectRecorderTrack(midiRecorderState.tracks[0].id); return; }
+    }
     renderMidiRecorder(); saveActiveState();
   });
   document.getElementById("recTracks").addEventListener("keydown", event => {

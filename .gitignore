@@ -11,3 +11,4 @@ Thumbs.db
 *.sln
 *.sw?
 .omo/
+.test-tmp/

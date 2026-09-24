@@ -1,0 +1,41 @@
+name: Browser tests
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run browser regressions serially
+        run: |
+          google-chrome --version
+          node --test test/cdp-harness.test.mjs
+          node test/browser-baseline.mjs
+          node test/effects-browser.mjs
+          node test/lfo-browser.mjs
+          node test/sync-browser.mjs
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-evidence
+          path: .omo/evidence/synth-modular-effects/
+          if-no-files-found: warn
+          retention-days: 7

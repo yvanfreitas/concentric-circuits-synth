@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -16,6 +16,7 @@ test("discoverBrowserExecutable returns an absolute configured executable", asyn
   const directory = await mkdtemp(join(tmpdir(), "cdp-harness-test-"));
   const executable = join(directory, "chrome-test.exe");
   await writeFile(executable, "browser fixture");
+  await chmod(executable, 0o755);
   t.after(() => rm(directory, { recursive: true, force: true }));
 
   // When

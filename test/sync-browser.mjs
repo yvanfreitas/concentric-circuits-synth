@@ -1,141 +1,14 @@
 #!/usr/bin/env node
 
-import { createServer } from "node:http";
-import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
-import { spawn, spawnSync } from "node:child_process";
-import { request } from "node:http";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { consoleMessages, pageErrors, sleep, waitForCondition, withBrowserHarness } from "./cdp-harness.mjs";
+
 const root = fileURLToPath(new URL("..", import.meta.url));
-const debugPort = Number(process.env.SYNTH_DEBUG_PORT || 19431);
 const evidencePath = resolve(process.env.SYNTH_EVIDENCE || ".omo/evidence/synth-modular-effects/task-3-sync.json");
-const chromePath = process.env.CHROME_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
 const headed = process.env.SYNTH_HEADED === "1";
-const sleep = ms => new Promise(resolveSleep => setTimeout(resolveSleep, ms));
-
-function getJson(url, method = "GET") {
-  return new Promise((resolveJson, reject) => {
-    const req = request(url, { method }, response => {
-      let body = "";
-      response.setEncoding("utf8");
-      response.on("data", chunk => { body += chunk; });
-      response.on("end", () => {
-        if (response.statusCode && response.statusCode >= 400) {
-          reject(new Error(`${method} ${url} returned ${response.statusCode}: ${body}`));
-          return;
-        }
-        resolveJson(JSON.parse(body));
-      });
-    });
-    req.on("error", reject);
-    req.end();
-  });
-}
-
-async function waitForJson(url) {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
-    try { return await getJson(url); } catch { await sleep(100); }
-  }
-  throw new Error(`Timed out waiting for ${url}`);
-}
-
-function canReach(url) {
-  return new Promise(resolveReach => {
-    const req = request(url, response => {
-      response.resume();
-      resolveReach(true);
-    });
-    req.setTimeout(500, () => {
-      req.destroy();
-      resolveReach(false);
-    });
-    req.on("error", () => resolveReach(false));
-    req.end();
-  });
-}
-
-async function pathExists(path) {
-  try { await access(path); return true; } catch { return false; }
-}
-
-class CdpPage {
-  #nextId = 1;
-  #pending = new Map();
-  #events = [];
-
-  constructor(webSocketDebuggerUrl) {
-    this.ws = new WebSocket(webSocketDebuggerUrl);
-    this.ready = new Promise((resolveReady, rejectReady) => {
-      this.ws.addEventListener("open", () => resolveReady());
-      this.ws.addEventListener("error", event => rejectReady(event.error || new Error("CDP WebSocket error")));
-    });
-    this.ws.addEventListener("message", event => {
-      const message = JSON.parse(event.data);
-      if (message.id) {
-        const pending = this.#pending.get(message.id);
-        if (!pending) return;
-        this.#pending.delete(message.id);
-        if (message.error) pending.reject(new Error(`${pending.method}: ${message.error.message}`));
-        else pending.resolve(message.result);
-      } else if (message.method === "Runtime.exceptionThrown") {
-        this.#events.push({ type: "pageerror", value: message.params.exceptionDetails });
-      } else if (message.method === "Runtime.consoleAPICalled") {
-        this.#events.push({
-          type: "console",
-          value: {
-            level: message.params.type,
-            text: message.params.args.map(arg => arg.value ?? arg.unserializableValue ?? arg.description ?? arg.type).join(" "),
-            timestamp: message.params.timestamp
-          }
-        });
-      } else if (message.method === "Log.entryAdded") {
-        this.#events.push({ type: "console", value: { level: message.params.entry.level, text: message.params.entry.text, source: message.params.entry.source } });
-      }
-    });
-  }
-
-  async command(method, params = {}) {
-    await this.ready;
-    const id = this.#nextId++;
-    return new Promise((resolveCommand, rejectCommand) => {
-      this.#pending.set(id, { method, resolve: resolveCommand, reject: rejectCommand });
-      this.ws.send(JSON.stringify({ id, method, params }));
-    });
-  }
-
-  async evaluate(expression) {
-    const result = await this.command("Runtime.evaluate", {
-      expression,
-      returnByValue: true,
-      awaitPromise: true,
-      userGesture: true
-    });
-    if (result.exceptionDetails) {
-      throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
-    }
-    return result.result?.value;
-  }
-
-  drainEvents() {
-    const events = this.#events;
-    this.#events = [];
-    return events;
-  }
-
-  close() { this.ws.close(); }
-}
-
-async function waitForCondition(page, expression, timeoutMs = 3000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      if (await page.evaluate(expression)) return true;
-    } catch {}
-    await sleep(50);
-  }
-  return false;
-}
 
 async function setFlag(page, flag, enabled) {
   await page.evaluate(`(() => {
@@ -191,19 +64,6 @@ async function measureCycleSignal(page) {
   })()`);
 }
 
-function pageErrors(events) {
-  return events.filter(event => event.type === "pageerror").map(event => ({
-    text: event.value.exception?.description || event.value.exception?.value || event.value.text,
-    url: event.value.url,
-    line: event.value.lineNumber,
-    column: event.value.columnNumber
-  }));
-}
-
-function consoleMessages(events) {
-  return events.filter(event => event.type === "console").map(event => event.value);
-}
-
 function priorRedRun(priorEvidence) {
   if (priorEvidence?.pass === false && !priorEvidence.harnessError && "ratioQuantizationRemoved" in (priorEvidence.checks || {})) {
     return {
@@ -225,58 +85,20 @@ async function readPriorEvidence() {
 async function run() {
   const priorEvidence = await readPriorEvidence();
   const redRun = priorRedRun(priorEvidence);
-  const gitStatusResult = spawnSync("git", ["status", "--short"], { cwd: root, encoding: "utf8", windowsHide: true });
-  const gitStatus = (gitStatusResult.stdout || "").trim().split(/\r?\n/).filter(Boolean);
-  const profile = resolve(root, `.omo/sync-browser-profile-${process.pid}`);
-  let server;
-  let chrome;
-  let page;
+  const gitStatus = ["Status probe omitted: browser tests do not execute tools from PATH."];
   let origin;
   let evidence;
   let runError;
+  let cleanupResult;
 
   try {
-    server = createServer(async (req, res) => {
-      const path = (req.url || "").split("?")[0];
-      if (path === "/favicon.ico") {
-        res.writeHead(204); res.end(); return;
-      }
-      if (path !== "/index.html") {
-        res.writeHead(404); res.end("not found"); return;
-      }
-      try {
-        res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
-        res.end(await readFile(resolve(root, "index.html")));
-      } catch (error) {
-        res.writeHead(500); res.end(error.message);
-      }
-    });
-    await new Promise(resolveListen => server.listen(0, "127.0.0.1", resolveListen));
-    const address = server.address();
-    origin = `http://127.0.0.1:${address.port}`;
-
-    const chromeArgs = [
-      "--disable-gpu",
-      "--autoplay-policy=no-user-gesture-required",
-      `--remote-debugging-port=${debugPort}`,
-      `--user-data-dir=${profile}`,
-      "--window-size=1280,900",
-      "about:blank"
-    ];
-    if (!headed) chromeArgs.unshift("--headless=new");
-    chrome = spawn(chromePath, chromeArgs, { windowsHide: !headed, stdio: ["ignore", "ignore", "pipe"] });
-    let chromeDiagnostics = "";
-    chrome.stderr.on("data", chunk => { chromeDiagnostics += chunk; });
-    chrome.on("error", error => { chromeDiagnostics += error.message; });
-
-    const version = await waitForJson(`http://127.0.0.1:${debugPort}/json/version`).catch(error => {
-      throw new Error(`${error.message}; Chrome exit=${chrome.exitCode}; ${chromeDiagnostics}`);
-    });
-    const target = await getJson(`http://127.0.0.1:${debugPort}/json/new?about:blank`, "PUT");
-    page = new CdpPage(target.webSocketDebuggerUrl);
-    await page.command("Runtime.enable");
-    await page.command("Log.enable");
-    await page.command("Page.enable");
+    const result = await withBrowserHarness({
+      root,
+      headed,
+      chromeArgs: ["--autoplay-policy=no-user-gesture-required", "--window-size=1280,900"]
+    }, async harness => {
+    const { page } = harness;
+    origin = harness.origin;
     await page.command("Page.navigate", { url: `${origin}/index.html?run=sync-${Date.now()}` });
     const loaded = await waitForCondition(page, `document.readyState === "complete" && typeof P !== "undefined"`);
     if (!loaded) throw new Error("Application did not reach a loaded state");
@@ -462,12 +284,13 @@ async function run() {
       noPageErrors: errors.length === 0,
       noConsoleErrors: consoleErrors.length === 0
     };
-    const scenarioPass = Object.values(checks).every(Boolean);
+    const { failingFirstCaptured, ...regressionChecks } = checks;
+    const scenarioPass = Object.values(regressionChecks).every(Boolean);
 
     evidence = {
       schema: "synth-modular-effects/task-3-sync",
       capturedAt: new Date().toISOString(),
-      browser: { product: version.Browser, userAgent: version.UserAgent, protocol: "Chrome DevTools Protocol", headed, executable: chromePath },
+      browser: { product: harness.version.Browser, userAgent: harness.version.UserAgent, protocol: "Chrome DevTools Protocol", headed, executable: harness.executable },
       server: { command: `${headed ? "$env:SYNTH_HEADED='1'; " : ""}node test/sync-browser.mjs`, origin },
       implementationProbe: engine,
       signal: { synced: syncedSignal, free: freeSignal },
@@ -505,8 +328,12 @@ async function run() {
         repeated_interruptions: { applicable: false, observed: false, reason: "No run was interrupted after the harness became executable." }
       }
     };
+    return evidence;
+    });
+    cleanupResult = result.cleanup;
   } catch (error) {
     runError = error;
+    cleanupResult = error.harnessCleanup;
     evidence = evidence || {
       schema: "synth-modular-effects/task-3-sync",
       capturedAt: new Date().toISOString(),
@@ -517,20 +344,10 @@ async function run() {
       redGreen: { redRun, transitionConfirmed: false, previousGreenPass: priorEvidence?.pass === true, repeatedGreen: false }
     };
   } finally {
-    if (page) page.close();
-    if (chrome?.pid) {
-      spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" });
-      chrome.kill();
-    }
-    await sleep(300);
-    if (server) await new Promise(resolveClose => server.close(resolveClose));
-    try {
-      await rm(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-    } catch {}
     const cleanup = {
-      serverStopped: origin ? !(await canReach(`${origin}/index.html`)) : true,
-      chromeStopped: !(await canReach(`http://127.0.0.1:${debugPort}/json/version`)),
-      profileRemoved: !(await pathExists(profile)),
+      serverStopped: cleanupResult?.completed.server === true,
+      chromeStopped: cleanupResult?.completed.browser === true && cleanupResult?.completed.page === true,
+      profileRemoved: cleanupResult?.completed.profile === true,
       temporaryInstrumentationRemoved: true,
       retainedArtifacts: ["test/sync-browser.mjs", evidencePath.startsWith(root) ? evidencePath.slice(root.length).replaceAll("\\", "/") : evidencePath]
     };

@@ -2,9 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pro-V — Concentric Arc Edition</title>
+<title>Pro-V — Online MIDI Synthesizer in Your Browser</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="ga-measurement-id" content="G-F9E7YCEYV8">
+<meta name="description" content="Free polyphonic synthesizer in your browser. Play with a MIDI controller or on-screen keys: 2 oscillators, filter, LFO, poly-mod, effects and MIDI Learn.">
+<link rel="canonical" href="https://midi-synth.ew.codes/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#0d0f0d">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Pro-V — Concentric Arc Edition">
+<meta property="og:title" content="Pro-V — Online MIDI Synthesizer in Your Browser">
+<meta property="og:description" content="Free polyphonic synthesizer in your browser. Play with a MIDI controller or on-screen keys: 2 oscillators, filter, LFO, poly-mod, effects and MIDI Learn.">
+<meta property="og:url" content="https://midi-synth.ew.codes/">
+<meta property="og:image" content="https://midi-synth.ew.codes/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pro-V synthesizer interface with oscillator, mixer and filter modules">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pro-V — Online MIDI Synthesizer in Your Browser">
+<meta name="twitter:description" content="Free polyphonic synthesizer in your browser. Play with a MIDI controller or on-screen keys: 2 oscillators, filter, LFO, poly-mod, effects and MIDI Learn.">
+<meta name="twitter:image" content="https://midi-synth.ew.codes/og-image.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Pro-V — Concentric Arc Edition",
+  "url": "https://midi-synth.ew.codes/",
+  "description": "Free polyphonic synthesizer in your browser. Play with a MIDI controller or on-screen keys: 2 oscillators, filter, LFO, poly-mod, effects and MIDI Learn.",
+  "applicationCategory": "MultimediaApplication",
+  "operatingSystem": "Any",
+  "browserRequirements": "Requires Web Audio API / Web MIDI",
+  "image": "https://midi-synth.ew.codes/og-image.png",
+  "inLanguage": "en",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<meta name="ga-measurement-id" content="G-G4HQK7XGVX">
 <!-- Google tag (gtag.js) -->
 <script>
   (function() {
@@ -746,6 +778,24 @@ input[type="range"].hidden-range {
   transition: color 0.2s;
 }
 .log-box.open { display: block; }
+.sampler-pads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.sampler-pad { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input); }
+.sampler-pad.filled { border-color: var(--accent-dim); }
+.sampler-pad.recording { border-color: var(--led-red); }
+.sampler-pad-trigger { min-height: 52px; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; color: var(--text-primary); font: 700 11px var(--ff-mono); cursor: pointer; }
+.sampler-pad-trigger:hover:not(:disabled) { background: var(--accent-dim); }
+.sampler-pad-trigger:disabled { color: var(--text-muted); cursor: default; }
+.sampler-pad-trigger.playing { background: var(--accent-color); color: var(--bg-main); box-shadow: 0 0 10px var(--accent-glow); }
+.sampler-pad-rec { padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-primary); font: 700 9px var(--ff-mono); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+.sampler-pad-rec.on { border-color: var(--led-red); color: var(--led-red); }
+.sampler-pad-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.sampler-pad-action { padding: 4px 2px; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-primary); font: 700 8px var(--ff-mono); letter-spacing: .5px; text-transform: uppercase; cursor: pointer; }
+.sampler-pad-action:hover:not(:disabled) { color: var(--text-primary); border-color: var(--accent-dim); }
+.sampler-pad-action:disabled { color: var(--text-muted); cursor: default; opacity: .55; }
+.sampler-pad-meta { color: var(--text-muted); font: 9px var(--ff-mono); text-align: center; }
+.sampler-status { margin-top: 8px; color: var(--text-muted); font: 9px var(--ff-mono); }
+.sampler-status.error { color: var(--led-red); }
+.sampler-pad :focus-visible, .sampler-pad-rec:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .midi-monitor .log-box { display: block; height: 160px; margin-top: 0; }
 .performance-module { grid-column: 1 / -1; }
 .performance-toolbar { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
@@ -940,6 +990,10 @@ input[type="range"].hidden-range {
 </style>
 </head>
 <body>
+
+<noscript>
+  <p style="padding:16px; color:#f0f4f0; font-family:sans-serif;">Pro-V is a free polyphonic MIDI synthesizer that runs in your browser using the Web Audio and Web MIDI APIs. Play it with a USB MIDI controller or the on-screen keyboard, shape sounds with two oscillators, a lowpass filter, envelopes, LFO, poly-mod and effects, and map any knob with MIDI Learn. JavaScript is required to play.</p>
+</noscript>
 
 <div class="synth-chassis">
 
@@ -1382,6 +1436,15 @@ input[type="range"].hidden-range {
       <div class="track-list" id="recTracks"></div>
     </section>
 
+    <section class="module-card" draggable="true" id="mod-sampler">
+      <div class="drag-handle"></div>
+      <div class="module-header">
+        <h2 class="module-title">Sampler</h2>
+      </div>
+      <div class="sampler-pads" id="samplerPads"></div>
+      <div class="sampler-status" id="samplerStatus" role="status">Record a 4s take or import an audio loop for each pad.</div>
+    </section>
+
   </main>
 
   <!-- ============ DRAWER KEYBOARD ============ -->
@@ -1415,8 +1478,9 @@ function saveActiveState() {
     activeBank: typeof activeBank !== "undefined" ? activeBank : "A",
     selectedPreset: select ? select.value : null,
     effects: effectRack.serialize(),
+    sampler: sampler.serialize(),
     modules: getActiveSynthModules(),
-    modulesVersion: 3,
+    modulesVersion: 4,
     sequencer: serializeSequencer(),
     recorder: serializeMidiRecorder()
   };
@@ -1424,6 +1488,7 @@ function saveActiveState() {
     localStorage.setItem("prophet_concentric_active_state", JSON.stringify(state));
   } catch(e) {
     console.warn("Could not save active state to localStorage", e);
+    sampler.reportSaveFailure();
   }
 }
 
@@ -1449,7 +1514,7 @@ function restoreLayoutState() {
         const additions = ["mod-midi-bindings", "mod-midi-monitor"].filter(id => !order.includes(id));
         order.splice(midiIndex + 1, 0, ...additions);
       }
-      ["mod-sequencer", "mod-recorder"].forEach(id => { if (!order.includes(id)) order.push(id); });
+      ["mod-sequencer", "mod-recorder", "mod-sampler"].forEach(id => { if (!order.includes(id)) order.push(id); });
       const grid = document.getElementById('mainGrid');
       order.forEach(id => {
         const el = document.getElementById(id);
@@ -2315,6 +2380,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Set up Preset system once DOM and dials are fully instantiated
   initSynthModulesUI();
   initEffectsUI();
+  initSamplerUI();
   initSequencer();
   initMidiRecorder();
   initPresetsSystem();
@@ -2509,7 +2575,8 @@ const SYNTH_MODULES = {
   "mod-midi-bindings": "MIDI Bindings",
   "mod-midi-monitor": "MIDI Monitor Log",
   "mod-sequencer": "Sequencer",
-  "mod-recorder": "MIDI Recorder"
+  "mod-recorder": "MIDI Recorder",
+  "mod-sampler": "Sampler"
 };
 const activeSynthModules = new Set(Object.keys(SYNTH_MODULES));
 const synthModuleCards = new Map();
@@ -2517,7 +2584,7 @@ function isModuleActive(id) { return !Object.hasOwn(SYNTH_MODULES, id) || active
 function getActiveSynthModules() { return [...activeSynthModules]; }
 function migrateModuleSelection(ids, version) {
   const source = Array.isArray(ids) ? ids : Object.keys(SYNTH_MODULES);
-  const additions = version === 3 ? [] : version === 2 ? ["mod-sequencer", "mod-recorder"] : ["mod-midi-bindings", "mod-midi-monitor", "mod-sequencer", "mod-recorder"];
+  const additions = version === 4 ? [] : version === 3 ? ["mod-sampler"] : version === 2 ? ["mod-sequencer", "mod-recorder", "mod-sampler"] : ["mod-midi-bindings", "mod-midi-monitor", "mod-sequencer", "mod-recorder", "mod-sampler"];
   return [...new Set([...source, ...additions].filter(id => Object.hasOwn(SYNTH_MODULES, id)))];
 }
 
@@ -2553,6 +2620,7 @@ function syncModuleDependencies() {
 
 function setSynthModules(ids, save = true) {
   const next = new Set(Array.isArray(ids) ? ids.filter(id => Object.hasOwn(SYNTH_MODULES, id)) : Object.keys(SYNTH_MODULES));
+  if (activeSynthModules.has("mod-sampler") && !next.has("mod-sampler")) sampler.teardown();
   const grid = document.getElementById("mainGrid");
   if (!next.has("mod-sequencer")) stopSequencer();
   if (!next.has("mod-recorder")) stopMidiRecorder(false);
@@ -2872,6 +2940,242 @@ const masterGain = audioCtx.createGain();
 masterGain.gain.value = 0.7;
 const voiceBus = audioCtx.createGain();
 const effectRack = createEffectRack(audioCtx, voiceBus, masterGain);
+
+const SAMPLER_PAD_COUNT = 4;
+const MAX_SAMPLER_TOTAL_BYTES = 2 * 1024 * 1024;
+const MAX_SAMPLER_DATA_LENGTH = Math.ceil(MAX_SAMPLER_TOTAL_BYTES * 4 / 3) + 256;
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error || new Error("Could not read audio file.")));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function dataUrlToBlob(data) {
+  const match = /^data:(audio\/[\w.+-]+(?:;[\w.+-]+=[\w.+-]+)*);base64,([A-Za-z0-9+/=]+)$/.exec(data);
+  if (!match) throw new Error("Invalid saved audio.");
+  const binary = atob(match[2]);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index++) bytes[index] = binary.charCodeAt(index);
+  return new Blob([bytes], { type: match[1] });
+}
+
+function validateSamplerState(value) {
+  const empty = { version: 1, pads: Array(SAMPLER_PAD_COUNT).fill(null) };
+  if (!value || value.version !== 1 || !Array.isArray(value.pads)) return empty;
+  let totalLength = 0;
+  return {
+    version: 1,
+    pads: Array.from({ length: SAMPLER_PAD_COUNT }, (_, index) => {
+      const pad = value.pads[index];
+      if (!pad || typeof pad !== "object") return null;
+      if (typeof pad.data !== "string" || pad.data.length > MAX_SAMPLER_DATA_LENGTH) return null;
+      if (!/^data:audio\/[\w.+-]+(?:;[\w.+-]+=[\w.+-]+)*;base64,[A-Za-z0-9+/=]+$/.test(pad.data)) return null;
+      if (typeof pad.name !== "string" || pad.name.length > 80) return null;
+      if (totalLength + pad.data.length > MAX_SAMPLER_DATA_LENGTH) return null;
+      totalLength += pad.data.length;
+      return { data: pad.data, name: pad.name };
+    })
+  };
+}
+
+const sampler = (() => {
+  const pads = Array.from({ length: SAMPLER_PAD_COUNT }, () => ({ buffer: null, blob: null, data: null, name: null, source: null }));
+  let activeRecording = null, requestedCapture = 0, statusEl = null, padsEl = null;
+
+  function setStatus(message, error = false) {
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.classList.toggle("error", error);
+  }
+
+  function fileExtension(type) {
+    if (type === "audio/wav" || type === "audio/wave") return "wav";
+    if (type === "audio/mpeg") return "mp3";
+    if (type === "audio/ogg") return "ogg";
+    return "webm";
+  }
+
+  function stopSource(pad) {
+    if (!pad.source) return;
+    const source = pad.source;
+    pad.source = null;
+    source.onended = null;
+    try { source.stop(); } catch (_) {}
+  }
+
+  function render() {
+    if (!padsEl) return;
+    pads.forEach((pad, index) => {
+      const root = padsEl.children[index], trigger = root.querySelector(".sampler-pad-trigger");
+      const record = root.querySelector(".sampler-pad-rec"), exportButton = root.querySelector(".sampler-export");
+      const isRecording = activeRecording?.index === index;
+      root.classList.toggle("filled", Boolean(pad.buffer));
+      root.classList.toggle("recording", isRecording);
+      trigger.classList.toggle("playing", Boolean(pad.source));
+      trigger.textContent = pad.buffer ? `PAD ${index + 1}` : `PAD ${index + 1} EMPTY`;
+      record.classList.toggle("on", isRecording);
+      record.textContent = isRecording ? "STOP" : "REC";
+      exportButton.disabled = !pad.blob;
+      root.querySelector(".sampler-pad-meta").textContent = isRecording ? "Recording…" : pad.name ? `MIDI ${36 + index} · ${pad.name}` : `MIDI ${36 + index}`;
+    });
+  }
+
+  async function storeBlob(index, blob, name) {
+    if (blob.size === 0) throw new Error("The audio file is empty.");
+    const savedBytes = pads.reduce((total, pad, padIndex) => total + (padIndex === index ? 0 : pad.blob?.size || 0), 0);
+    if (blob.size + savedBytes > MAX_SAMPLER_TOTAL_BYTES) throw new Error("The four pads can store up to 2 MB of audio in total.");
+    const buffer = await audioCtx.decodeAudioData(await blob.arrayBuffer());
+    const pad = pads[index];
+    stopSource(pad);
+    pad.buffer = buffer;
+    pad.blob = blob;
+    pad.data = await blobToDataUrl(blob);
+    pad.name = name.slice(0, 80);
+    render();
+    saveActiveState();
+  }
+
+  async function stopRecording(discard = false) {
+    if (!activeRecording) return;
+    const recording = activeRecording;
+    recording.discard ||= discard;
+    if (recording.timer) clearTimeout(recording.timer);
+    if (recording.recorder.state !== "inactive") recording.recorder.stop();
+    await recording.finished;
+  }
+
+  async function record(index) {
+    if (activeRecording?.index === index) return stopRecording();
+    await stopRecording();
+    const request = ++requestedCapture;
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return setStatus("Microphone capture needs HTTPS and a supported browser.", true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (request !== requestedCapture) return stream.getTracks().forEach(track => track.stop());
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "";
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      let resolveFinished;
+      const recording = { index, recorder, stream, chunks: [], finished: new Promise(resolve => { resolveFinished = resolve; }), resolveFinished, discard: false, timer: null };
+      activeRecording = recording;
+      recorder.addEventListener("dataavailable", event => { if (event.data.size) recording.chunks.push(event.data); });
+      recorder.addEventListener("stop", async () => {
+        if (activeRecording !== recording) return;
+        activeRecording = null;
+        recording.stream.getTracks().forEach(track => track.stop());
+        try {
+          if (!recording.discard) {
+            const blob = new Blob(recording.chunks, { type: recorder.mimeType || "audio/webm" });
+            await storeBlob(index, blob, `Recorded pad ${index + 1}.${fileExtension(blob.type)}`);
+            setStatus(`Pad ${index + 1} captured.`);
+            trackEvent("sampler_record", { pad: index + 1 });
+          }
+        } catch (error) { setStatus(error.message || "Could not save that recording.", true); }
+        finally { recording.resolveFinished(); render(); }
+      });
+      recorder.start();
+      recording.timer = setTimeout(() => { stopRecording(); }, 4000);
+      setStatus(`Recording pad ${index + 1}…`);
+      render();
+    } catch (error) {
+      setStatus(error.name === "NotAllowedError" ? "Microphone blocked. Allow access and try again."
+        : error.name === "NotFoundError" ? "No microphone was found." : "Could not start microphone capture.", true);
+      render();
+    }
+  }
+
+  function trigger(index) {
+    const pad = pads[index];
+    if (!pad?.buffer) return false;
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    stopSource(pad);
+    const source = audioCtx.createBufferSource();
+    source.buffer = pad.buffer;
+    source.connect(voiceBus);
+    source.addEventListener("ended", () => { if (pad.source === source) { pad.source = null; render(); } }, { once: true });
+    pad.source = source;
+    source.start();
+    render();
+    trackEvent("sampler_trigger", { pad: index + 1 });
+    return true;
+  }
+
+  async function importFile(index, file) {
+    if (!file || !file.type.startsWith("audio/")) return setStatus("Choose a supported audio file.", true);
+    try {
+      await storeBlob(index, file, file.name || `Imported pad ${index + 1}.${fileExtension(file.type)}`);
+      setStatus(`Loaded ${file.name || `audio into pad ${index + 1}`}.`);
+      trackEvent("sampler_import", { pad: index + 1, type: file.type });
+    } catch (error) { setStatus(error.message || "Could not load that audio file.", true); }
+  }
+
+  function download(index) {
+    const pad = pads[index];
+    if (!pad?.blob) return;
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(pad.blob);
+    link.download = pad.name || `synth-sample-${index + 1}.${fileExtension(pad.blob.type)}`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    setStatus(`Downloaded pad ${index + 1}.`);
+    trackEvent("sampler_export", { pad: index + 1 });
+  }
+
+  function init() {
+    padsEl = document.getElementById("samplerPads");
+    statusEl = document.getElementById("samplerStatus");
+    padsEl.replaceChildren(...pads.map((_, index) => {
+      const root = document.createElement("div"), triggerButton = document.createElement("button");
+      root.className = "sampler-pad";
+      triggerButton.type = "button"; triggerButton.className = "sampler-pad-trigger"; triggerButton.addEventListener("click", () => trigger(index));
+      const actions = document.createElement("div"); actions.className = "sampler-pad-actions";
+      const recordButton = document.createElement("button");
+      recordButton.type = "button"; recordButton.className = "sampler-pad-rec"; recordButton.setAttribute("aria-label", `Record pad ${index + 1}`); recordButton.addEventListener("click", () => record(index));
+      const importButton = document.createElement("button");
+      importButton.type = "button"; importButton.className = "sampler-pad-action"; importButton.textContent = "Import"; importButton.setAttribute("aria-label", `Import audio into pad ${index + 1}`);
+      const input = document.createElement("input");
+      input.type = "file"; input.accept = "audio/*"; input.hidden = true;
+      input.addEventListener("change", () => { importFile(index, input.files?.[0]); input.value = ""; });
+      importButton.addEventListener("click", () => input.click());
+      const exportButton = document.createElement("button");
+      exportButton.type = "button"; exportButton.className = "sampler-pad-action sampler-export"; exportButton.textContent = "Export"; exportButton.setAttribute("aria-label", `Export audio from pad ${index + 1}`); exportButton.addEventListener("click", () => download(index));
+      const meta = document.createElement("div"); meta.className = "sampler-pad-meta";
+      actions.append(recordButton, importButton, exportButton, input);
+      root.append(triggerButton, actions, meta);
+      return root;
+    }));
+    render();
+  }
+
+  async function restore(value) {
+    const saved = validateSamplerState(value);
+    await Promise.all(saved.pads.map(async (pad, index) => {
+      if (!pad) return;
+      try { await storeBlob(index, dataUrlToBlob(pad.data), pad.name); }
+      catch (_) { setStatus(`Could not restore pad ${index + 1}.`, true); }
+    }));
+    render();
+  }
+
+  function teardown() {
+    requestedCapture += 1;
+    stopRecording(true);
+    pads.forEach(stopSource);
+    render();
+  }
+
+  return {
+    download, importFile, init, record,
+    reportSaveFailure: () => setStatus("Audio could not be saved locally. Try a smaller file.", true),
+    restore, serialize: () => ({ version: 1, pads: pads.map(pad => pad.data ? { data: pad.data, name: pad.name } : null) }),
+    teardown, trigger
+  };
+})();
+
+function initSamplerUI() { sampler.init(); }
 
 // Create Analyser Node for master VU visualization
 const analyser = audioCtx.createAnalyser();
@@ -3815,10 +4119,10 @@ let recorderPlaybackContexts = [];
 let recorderRenderFrame = null;
 function cloneRecorderPatch(patch) {
   if (!patch || !patch.P || typeof patch.P !== "object") return null;
-  return { P: { ...patch.P }, octave: clamp(Number(patch.octave) || 0, -2, 2), effects: validateEffectsState(patch.effects), modules: migrateModuleSelection(patch.modules, patch.modulesVersion), modulesVersion: 3 };
+  return { P: { ...patch.P }, octave: clamp(Number(patch.octave) || 0, -2, 2), effects: validateEffectsState(patch.effects), modules: migrateModuleSelection(patch.modules, patch.modulesVersion), modulesVersion: 4 };
 }
 function captureSynthPatch() {
-  return { P: { ...P }, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 3 };
+  return { P: { ...P }, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 4 };
 }
 syncActiveRecorderPatch = () => {
   if (midiRecorderState.recording || midiRecorderState.playing) return;
@@ -4238,6 +4542,10 @@ function onMIDIMessage(e) {
     }
 
     if (cmd === 0x90 && d2 > 0) {
+      if (isModuleActive("mod-sampler") && d1 >= 36 && d1 < 36 + SAMPLER_PAD_COUNT) {
+        sampler.trigger(d1 - 36);
+        return;
+      }
       noteOn(d1, d2); 
       flashKey(d1, true);
       trackNotePlayed('midi_device', d1);
@@ -5165,7 +5473,7 @@ function initPresetsSystem() {
     const cleanName = name.trim();
 
     // Clone parameter state and append visual octave shift
-    const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 3 };
+    const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 4 };
     userPresets[cleanName] = presetData;
     
     try {
@@ -5235,6 +5543,7 @@ function initPresetsSystem() {
     }
     // Apply parameter values
     applyPreset(loadedState.P, true);
+    sampler.restore(loadedState.sampler);
     // Restore dropdown selection value if present
     if (loadedState.selectedPreset) {
       select.value = loadedState.selectedPreset;

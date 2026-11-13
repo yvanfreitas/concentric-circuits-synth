@@ -59,7 +59,7 @@ async function run() {
   })()`);
   await check("noteInstancesStayIsolated", "__voiceIsolation.liveSurvived && __voiceIsolation.sequencerReleased && __voiceIsolation.repeatedPitchSurvived && __voiceIsolation.pendingPitchSurvived");
   await evaluate(`(() => {
-    const source = { P: { ...P }, octave: 0, effects: { version: 1, modules: [] }, modules: ['mod-oscB', 'not-a-module', 'mod-oscB'], modulesVersion: 3 };
+    const source = { P: { ...P }, octave: 0, effects: { version: 1, modules: [] }, modules: ['mod-oscB', 'not-a-module', 'mod-oscB'], modulesVersion: 4 };
     const normalized = cloneRecorderPatch(source);
     const fallback = cloneRecorderPatch({ ...source, modules: null });
     window.__patchNormalization = { normalized: normalized.modules, fallback: fallback.modules };

@@ -156,6 +156,10 @@ async function run() {
   await check("performanceSessionRestored", "sequencerState.steps.length === 24 && sequencerState.steps[0].note === 64 && sequencerState.steps[0].velocity === 111 && midiRecorderState.tracks.length === 2 && midiRecorderState.tracks[0].events.length === 2 && midiRecorderState.tracks[0].patch?.P?.cutoff === 5555 && !!document.querySelector('[data-track=\"1\"] .track-preview rect')");
   await evaluate(`window.prompt=()=>'<Lead & Bass>'; window.confirm=()=>true; document.querySelector('[data-track="1"] [data-action="rename"]').click(); document.querySelector('[data-track="2"] [data-action="clear"]').click(); document.getElementById('seqClear').click();`);
   await check("performanceContentCanBeReset", "midiRecorderState.tracks[0].name === '<Lead & Bass>' && document.querySelector('[data-track=\"1\"] .track-name').textContent === '<Lead & Bass>' && !document.querySelector('[data-track=\"1\"] .track-name img') && midiRecorderState.tracks[1].events.length === 0 && midiRecorderState.tracks[1].duration === 0 && midiRecorderState.tracks[1].patch?.P?.cutoff === 8000 && sequencerState.steps.length === 24 && sequencerState.steps.every(step => !step.active && step.note === 60 && step.velocity === 100)");
+  await evaluate("document.getElementById('undoBtn').click()");
+  await check("clearIsUndoable", "sequencerState.steps[0].note === 64 && sequencerState.steps[0].velocity === 111 && document.getElementById('undoBar').hidden");
+  await evaluate("document.getElementById('seqClear').click()");
+  await check("undoOfferedAfterClear", "!document.getElementById('undoBar').hidden && document.getElementById('undoText').textContent === 'Sequencer cleared.' && sequencerState.steps.every(step => !step.active && step.note === 60)");
   const expected = await snapshot();
   await evaluate("window.prompt = () => 'Rack QA'; document.getElementById('savePresetBtn').click()");
   await load(url + "?restore=1");

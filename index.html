@@ -113,9 +113,26 @@
   --bg-card:       rgba(18, 22, 18, 0.7); /* Transparent dark for glassmorphic mockup look */
   --bg-input:      rgba(255, 255, 255, 0.05);
   --text-primary:  #f0f4f0; /* Crisp off-white */
-  --text-muted:    #6b7569;
+  --text-muted:    #8a9488; /* >= 4.5:1 on every panel surface */
   --border-color:  rgba(255, 255, 255, 0.08); /* Thin crisp lines */
-  
+  --dial-track:    #202820; /* Unlit ring / fader slot */
+  --bg-hover:      rgba(255, 255, 255, 0.08);
+  --bg-inset:      #050705; /* Recessed wells: log, piano-roll keyboard */
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  /* Type scale: four steps only. Sans for labels and buttons, mono for values and readouts. */
+  --fs-micro:      10px;
+  --fs-ui:         11px;
+  --fs-title:      13px;
+  --fs-brand:      20px;
+
+  /* Radius scale */
+  --radius-sm:     4px;
+  --radius-md:     6px;
+  --radius-lg:     8px;
+  --radius-pill:   20px;
+  color-scheme: dark;
+
   /* Dynamic accent variables, updated via JS */
   --accent-color:  #4bb05c;
   --accent-glow:   rgba(75, 176, 92, 0.18);
@@ -127,7 +144,8 @@
   --ff-mono:       'Share Tech Mono', monospace;
 }
 
-html, body {
+html { background-color: var(--bg-main); }
+body {
   background-color: var(--bg-main);
   background-image: radial-gradient(circle at 0% 100%, var(--accent-glow) 0%, var(--bg-main) 80%);
   background-attachment: fixed;
@@ -170,7 +188,7 @@ body.keyboard-open {
   padding: 14px 20px;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px; /* Slightly rounded cards like mockup */
+  border-radius: var(--radius-lg); /* Slightly rounded cards like mockup */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   flex-wrap: wrap;
@@ -182,7 +200,7 @@ body.keyboard-open {
   flex-direction: column;
 }
 .brand-section h1 {
-  font-size: 20px;
+  font-size: var(--fs-brand);
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -191,7 +209,7 @@ body.keyboard-open {
 }
 .brand-section span {
   font-family: var(--ff-mono);
-  font-size: 8px;
+  font-size: var(--fs-micro);
   letter-spacing: 4px;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -202,9 +220,9 @@ body.keyboard-open {
   color: var(--accent-color);
   font-family: var(--ff-mono);
   padding: 4px 12px;
-  border-radius: 20px; /* Pill-shaped display */
+  border-radius: var(--radius-pill); /* Pill-shaped display */
   border: 1px solid var(--accent-color);
-  font-size: 14px;
+  font-size: var(--fs-title);
   font-weight: 700;
   letter-spacing: 2px;
   text-shadow: 0 0 8px var(--accent-color);
@@ -222,13 +240,14 @@ body.keyboard-open {
   padding: 0;
   border: none;
 }
-.voices-label {
-  font-family: var(--ff-sans);
-  font-size: 9px;
+/* Field / group label */
+.voices-label, .performance-field label {
+  font: 600 var(--fs-micro) var(--ff-sans);
   text-transform: uppercase;
-  letter-spacing: 1.5px;
+  letter-spacing: 1px;
   color: var(--text-muted);
 }
+label.voices-label { display: block; margin-bottom: 4px; }
 .voices-leds {
   display: flex;
   gap: 5px;
@@ -236,7 +255,7 @@ body.keyboard-open {
 .voice-dot {
   width: 6px; height: 6px;
   border-radius: 50%;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-hover);
   border: none;
   transition: background-color 0.1s, box-shadow 0.1s;
 }
@@ -266,32 +285,41 @@ body.keyboard-open {
 
 .midi-text {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-ui);
   color: var(--text-primary);
 }
 
 .hdr-btn {
   background: var(--bg-input);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   padding: 6px 14px;
   font-family: var(--ff-sans);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.15s;
 }
-
-select#keyTrack, select#maxVoices, select#presetSelect, select#deviceSelect {
-  background: rgba(255, 255, 255, 0.05);
+/* One hover for every momentary button */
+.hdr-btn:hover, .midi-bank-header button:hover, .octave-btn:hover, .kb-hdr-btn:hover,
+.sampler-pad-rec:hover, .sampler-pad-action:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+}
+.hdr-btn.danger { color: var(--led-red); border-color: var(--led-red-dim); }
+:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+
+select {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
   padding: 6px 28px 6px 12px;
   font-family: var(--ff-sans);
-  font-size: 11px;
+  font-size: var(--fs-ui);
   cursor: pointer;
   transition: all 0.15s;
   appearance: none; /* Hide default browser arrow */
@@ -300,22 +328,18 @@ select#keyTrack, select#maxVoices, select#presetSelect, select#deviceSelect {
   background-position: right 8px center;
   background-size: 16px;
 }
-select#keyTrack, select#maxVoices {
+select#keyTrack, select#maxVoices, select#deviceSelect {
   width: 100%;
 }
 select#presetSelect {
   min-width: 170px;
 }
-select#deviceSelect {
-  width: 100%;
+select:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-strong);
 }
-select#keyTrack:hover, select#maxVoices:hover, select#presetSelect:hover, select#deviceSelect:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-select#keyTrack option, select#maxVoices option, select#presetSelect option, select#deviceSelect option,
-select#presetSelect optgroup {
-  background-color: #121612; /* Solid dark color matching cards */
+select option, select optgroup {
+  background-color: var(--bg-main);
   color: var(--text-primary); /* Off-white text */
 }
 
@@ -332,7 +356,7 @@ select#presetSelect optgroup {
 .module-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px; /* Slightly rounded cards like mockup */
+  border-radius: var(--radius-lg); /* Slightly rounded cards like mockup */
   padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
@@ -348,6 +372,7 @@ select#presetSelect optgroup {
 .module-header > * { min-width: 0; }
 .module-card.module-unavailable .concentric-layout-row,
 .module-card.module-unavailable .toggles-group { opacity: .35; pointer-events: none; }
+.module-card.module-unavailable .module-title::after { content: " · needs LFO"; color: var(--text-muted); font-weight: 400; }
 .dependency-hidden { display: none !important; }
 .module-card.dragging {
   opacity: 0.5;
@@ -389,6 +414,7 @@ select#presetSelect optgroup {
 }
 
 .module-header {
+  min-height: 35px; /* Same title height with or without a remove button */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -397,7 +423,7 @@ select#presetSelect optgroup {
 }
 .module-title {
   font-family: var(--ff-sans);
-  font-size: 13px;
+  font-size: var(--fs-title);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -419,6 +445,7 @@ select#presetSelect optgroup {
   flex-shrink: 0;
   cursor: ns-resize;
 }
+.concentric-canvas-container:has(#canvas-filter) { cursor: crosshair; } /* XY pad */
 .concentric-canvas {
   width: 150px;
   height: 150px;
@@ -441,7 +468,7 @@ select#presetSelect optgroup {
   padding: 4px 0;
   border-radius: 0;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Thin bottom divider */
+  border-bottom: 1px solid var(--border-color); /* Thin bottom divider */
   transition: background-color 0.15s, border-color 0.15s;
   cursor: ns-resize;
 }
@@ -466,7 +493,7 @@ select#presetSelect optgroup {
 
 .legend-name {
   font-family: var(--ff-sans);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   text-transform: uppercase;
   color: var(--text-muted); /* Less dominant like mockup */
@@ -480,7 +507,7 @@ select#presetSelect optgroup {
 
 .legend-value {
   font-family: var(--ff-mono);
-  font-size: 11px;
+  font-size: var(--fs-ui);
   font-weight: 600;
   color: var(--text-primary);
   min-width: 50px;
@@ -489,20 +516,20 @@ select#presetSelect optgroup {
 
 .learn-btn {
   font-family: var(--ff-sans);
-  font-size: 8px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   padding: 2px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
   color: var(--text-muted);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 0.15s;
 }
 .learn-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-hover);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.3);
+  border-color: var(--border-strong);
 }
 .learn-btn.active {
   background-color: var(--led-red);
@@ -530,9 +557,9 @@ input[type="range"].hidden-range {
 }
 .waveform-selector button {
   flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 6px; /* Match cards */
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md); /* Match cards */
   padding: 8px 4px;
   cursor: pointer;
   display: flex;
@@ -542,12 +569,12 @@ input[type="range"].hidden-range {
   transition: all 0.12s;
 }
 .waveform-selector button:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-hover);
 }
 .waveform-selector button.active {
-  background-color: #f0f4f0; /* Crisp white background for active waveform */
-  color: #0c0e0b; /* Dark text */
-  border-color: #f0f4f0;
+  background-color: var(--text-primary); /* Crisp white background for active waveform */
+  color: var(--bg-main); /* Dark text */
+  border-color: var(--text-primary);
   box-shadow: 0 4px 12px rgba(255,255,255,0.1);
 }
 .waveform-selector button svg {
@@ -560,7 +587,7 @@ input[type="range"].hidden-range {
   transition: stroke 0.12s;
 }
 .waveform-selector button.active svg {
-  stroke: #0c0e0b; /* Dark icon */
+  stroke: var(--bg-main); /* Dark icon */
 }
 .waveform-selector button .wave-indicator {
   width: 3px; height: 3px;
@@ -571,12 +598,13 @@ input[type="range"].hidden-range {
   background-color: var(--accent-color); /* dynamic accent color */
 }
 .waveform-selector button span {
-  font-family: var(--ff-mono);
-  font-size: 7px;
+  font-family: var(--ff-sans);
+  font-weight: 600;
+  font-size: var(--fs-micro);
   color: var(--text-muted);
 }
 .waveform-selector button.active span {
-  color: #0c0e0b; /* Dark text label */
+  color: var(--bg-main); /* Dark text label */
 }
 
 .toggles-group {
@@ -587,12 +615,12 @@ input[type="range"].hidden-range {
   justify-content: center;
 }
 .button-toggle {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px; /* Pill-shaped buttons */
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill); /* Pill-shaped buttons */
   padding: 4px 12px;
   font-family: var(--ff-sans);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -602,7 +630,7 @@ input[type="range"].hidden-range {
   transition: all 0.12s;
 }
 .button-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--bg-hover);
   color: var(--text-primary);
 }
 .button-toggle::before {
@@ -614,9 +642,9 @@ input[type="range"].hidden-range {
   transition: background-color 0.12s;
 }
 .button-toggle.on {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--bg-hover);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--border-strong);
 }
 .button-toggle.on::before {
   background-color: var(--accent-color);
@@ -634,16 +662,16 @@ input[type="range"].hidden-range {
   gap: 6px;
   background: var(--bg-input);
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   width: fit-content;
 }
 .octave-btn {
   background: var(--bg-main);
   border: 1px solid var(--border-color);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   width: 24px; height: 24px;
-  font-size: 14px;
+  font-size: var(--fs-title);
   font-weight: 700;
   color: var(--text-primary);
   display: flex;
@@ -651,10 +679,9 @@ input[type="range"].hidden-range {
   justify-content: center;
   cursor: pointer;
 }
-.octave-btn:hover { background: var(--accent-color); color: var(--bg-main); border-color: var(--accent-color); }
 .octave-val {
   font-family: var(--ff-mono);
-  font-size: 14px;
+  font-size: var(--fs-title);
   font-weight: 700;
   min-width: 24px;
   text-align: center;
@@ -674,22 +701,22 @@ input[type="range"].hidden-range {
   width: 100%;
   border-collapse: collapse;
   font-family: var(--ff-sans);
-  font-size: 10px;
+  font-size: var(--fs-micro);
 }
 .poly-matrix th {
   padding: 6px 8px;
   text-transform: uppercase;
   font-weight: 600;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border-color);
   color: var(--text-muted);
   letter-spacing: 1px;
 }
 .poly-matrix td {
   padding: 8px;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-color);
 }
 .poly-matrix td:first-child {
   text-align: left;
@@ -719,10 +746,11 @@ input[type="range"].hidden-range {
   flex: 1;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   padding: 5px;
-  font-family: var(--ff-mono);
-  font-size: 9.5px;
+  font-family: var(--ff-sans);
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
   color: var(--text-primary);
   cursor: pointer;
   font-weight: 600;
@@ -735,7 +763,7 @@ input[type="range"].hidden-range {
 }
 .cc-list {
   font-family: var(--ff-mono);
-  font-size: 9.5px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   columns: 2;
   column-gap: 12px;
@@ -751,7 +779,7 @@ input[type="range"].hidden-range {
 .log-toggle-btn {
   background: none; border: none;
   font-family: var(--ff-mono);
-  font-size: 9.5px;
+  font-size: var(--fs-micro);
   color: var(--text-muted);
   cursor: pointer;
   text-transform: uppercase;
@@ -762,12 +790,12 @@ input[type="range"].hidden-range {
 }
 .log-toggle-btn:hover { color: var(--text-primary); }
 .log-box {
-  background: #030503;
+  background: var(--bg-inset);
   color: var(--accent-color);
   font-family: var(--ff-mono);
-  font-size: 9px;
+  font-size: var(--fs-micro);
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   height: 90px;
   overflow-y: auto;
   margin-top: 6px;
@@ -779,55 +807,55 @@ input[type="range"].hidden-range {
 }
 .log-box.open { display: block; }
 .sampler-pads { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-.sampler-pad { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-input); }
+.sampler-pad { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: var(--bg-input); }
 .sampler-pad.filled { border-color: var(--accent-dim); }
 .sampler-pad.recording { border-color: var(--led-red); }
-.sampler-pad-trigger { min-height: 52px; border: 1px solid var(--border-color); border-radius: 6px; background: transparent; color: var(--text-primary); font: 700 11px var(--ff-mono); cursor: pointer; }
+.sampler-pad-trigger { min-height: 52px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: transparent; color: var(--text-primary); font: 700 var(--fs-ui) var(--ff-sans); letter-spacing: 1px; cursor: pointer; }
 .sampler-pad-trigger:hover:not(:disabled) { background: var(--accent-dim); }
 .sampler-pad-trigger:disabled { color: var(--text-muted); cursor: default; }
 .sampler-pad-trigger.playing { background: var(--accent-color); color: var(--bg-main); box-shadow: 0 0 10px var(--accent-glow); }
-.sampler-pad-rec { padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-primary); font: 700 9px var(--ff-mono); letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+.sampler-pad-rec { grid-column: 1 / -1; padding: 5px 4px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font: 600 var(--fs-micro) var(--ff-sans); text-transform: uppercase; cursor: pointer; }
 .sampler-pad-rec.on { border-color: var(--led-red); color: var(--led-red); }
-.sampler-pad-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.sampler-pad-action { padding: 4px 2px; border: 1px solid var(--border-color); border-radius: 4px; background: transparent; color: var(--text-primary); font: 700 8px var(--ff-mono); letter-spacing: .5px; text-transform: uppercase; cursor: pointer; }
-.sampler-pad-action:hover:not(:disabled) { color: var(--text-primary); border-color: var(--accent-dim); }
+.sampler-pad-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+.sampler-pad-action { padding: 5px 2px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font: 600 var(--fs-micro) var(--ff-sans); text-transform: uppercase; cursor: pointer; }
 .sampler-pad-action:disabled { color: var(--text-muted); cursor: default; opacity: .55; }
-.sampler-pad-meta { color: var(--text-muted); font: 9px var(--ff-mono); text-align: center; }
-.sampler-status { margin-top: 8px; color: var(--text-muted); font: 9px var(--ff-mono); }
+.sampler-pad-meta { color: var(--text-muted); font: var(--fs-micro) var(--ff-mono); text-align: center; }
+.sampler-status { margin-top: 8px; color: var(--text-muted); font: var(--fs-micro) var(--ff-mono); }
 .sampler-status.error { color: var(--led-red); }
-.sampler-pad :focus-visible, .sampler-pad-rec:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
 .midi-monitor .log-box { display: block; height: 160px; margin-top: 0; }
 .performance-module { grid-column: 1 / -1; }
 .performance-toolbar { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
 .performance-field { display: flex; flex-direction: column; gap: 4px; min-width: 88px; }
-.performance-field label { font: 600 9px var(--ff-sans); letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
-.performance-field input, .performance-field select {
-  height: 32px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 6px;
-  background: var(--bg-input); color: var(--text-primary); font: 11px var(--ff-mono);
+.performance-toolbar > button { height: 32px; } /* Line buttons up with the fields */
+.performance-toolbar > .midi-text { line-height: 32px; }
+.performance-field input {
+  height: 32px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: var(--radius-md);
+  background: var(--bg-input); color: var(--text-primary); font: var(--fs-ui) var(--ff-mono);
 }
-.piano-roll-shell { display: grid; grid-template-columns: 64px minmax(858px, 1fr); width: 100%; max-height: 410px; overflow: auto; border: 1px solid var(--border-color); border-radius: 6px; background: rgba(0,0,0,.15); }
-.piano-keyboard { position: sticky; left: 0; z-index: 3; display: grid; grid-template-rows: repeat(49, 24px); padding-right: 2px; background: #050705; box-shadow: 4px 0 12px rgba(0,0,0,.35); }
-.piano-key { position: relative; width: 100%; border: 0; border-bottom: 1px solid #8d938d; background: linear-gradient(to right, #fff 0%, #e2e8e2 78%, #cbd1cb 100%); color: #121612; font: 700 8px var(--ff-mono); text-align: right; padding-right: 6px; cursor: pointer; box-shadow: inset -3px 0 0 rgba(0,0,0,.08); }
+.performance-field select { height: 32px; }
+.piano-roll-shell { display: grid; grid-template-columns: 64px minmax(858px, 1fr); width: 100%; max-height: 410px; overflow: auto; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: rgba(0,0,0,.15); }
+.piano-keyboard { position: sticky; left: 0; z-index: 3; display: grid; grid-template-rows: repeat(49, 24px); padding-right: 2px; background: var(--bg-inset); box-shadow: 4px 0 12px rgba(0,0,0,.35); }
+.piano-key { position: relative; width: 100%; border: 0; border-bottom: 1px solid #8d938d; background: linear-gradient(to right, #fff 0%, #e2e8e2 78%, #cbd1cb 100%); color: var(--bg-main); font: 700 var(--fs-micro) var(--ff-mono); text-align: right; padding-right: 6px; cursor: pointer; box-shadow: inset -3px 0 0 rgba(0,0,0,.08); }
 .piano-key.black { width: 68%; justify-self: start; z-index: 1; border-bottom-color: #000; background: linear-gradient(to right, #2b302a 0%, #111410 88%); color: var(--text-primary); box-shadow: 3px 0 5px rgba(0,0,0,.6); }
-.piano-key:hover, .piano-key:focus-visible, .piano-key.active { background: linear-gradient(to right, var(--accent-color) 0%, var(--accent-dim) 100%); color: #0d0f0d; box-shadow: inset -2px 0 5px rgba(0,0,0,.2), 0 0 10px var(--accent-glow); }
+.piano-key:hover, .piano-key:focus-visible, .piano-key.active { background: linear-gradient(to right, var(--accent-color) 0%, var(--accent-dim) 100%); color: var(--bg-main); box-shadow: inset -2px 0 5px rgba(0,0,0,.2), 0 0 10px var(--accent-glow); }
 .piano-grid { display: grid; grid-template-columns: repeat(var(--sequencer-steps, 16), minmax(52px, 1fr)); grid-template-rows: repeat(49, 24px); min-width: 858px; }
 .piano-cell { position: relative; border: 0; border-right: 1px solid rgba(255,255,255,.055); border-bottom: 1px solid rgba(255,255,255,.045); background: transparent; cursor: crosshair; }
 .piano-cell.step-start { border-left: 1px solid rgba(255,255,255,.12); }
 .piano-cell.beat { border-right-color: rgba(255,255,255,.15); }
 .piano-cell.note-row { background: rgba(255,255,255,.018); }
-.piano-cell.active::after { content: attr(data-label); position: absolute; inset: 3px 2px; display: grid; place-items: center; border-radius: 4px; background: var(--accent-color); color: #0d0f0d; font: 700 8px var(--ff-mono); box-shadow: 0 0 8px var(--accent-glow); }
+.piano-cell.active::after { content: attr(data-label); position: absolute; inset: 3px 2px; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--accent-color); color: var(--bg-main); font: 700 var(--fs-micro) var(--ff-mono); box-shadow: 0 0 8px var(--accent-glow); }
 .piano-cell.current { background: var(--accent-dim); }
 .piano-cell.selected { box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
 .piano-cell:focus-visible { z-index: 2; outline: 1px solid var(--accent-color); outline-offset: -2px; }
 .track-list { display: flex; flex-direction: column; gap: 6px; }
-.track-row { display: grid; grid-template-columns: minmax(100px, .6fr) minmax(220px, 2fr) auto auto auto minmax(82px, auto) auto; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-input); cursor: pointer; }
+.track-row { display: grid; grid-template-columns: minmax(100px, .6fr) minmax(220px, 2fr) auto auto auto minmax(82px, auto) auto; align-items: center; gap: 6px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-input); cursor: pointer; }
 .track-row.armed { border-color: var(--accent-color); background: var(--accent-dim); }
-.track-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 11px var(--ff-sans); }
-.track-meta { color: var(--text-muted); font: 9px var(--ff-mono); text-align: right; }
+.track-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 var(--fs-ui) var(--ff-sans); }
+.track-meta { color: var(--text-muted); font: var(--fs-micro) var(--ff-mono); text-align: right; }
 .track-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .track-preview { display: block; width: 100%; height: 44px; border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); background-image: linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,.035) 1px, transparent 1px); background-size: 25% 100%, 100% 11px; }
 .track-preview rect { fill: var(--accent-color); opacity: .9; }
-.track-preview-empty { display: grid; place-items: center; height: 44px; color: var(--text-muted); font: 8px var(--ff-mono); border: 1px dashed var(--border-color); }
+.track-preview-empty { display: grid; place-items: center; height: 44px; color: var(--text-muted); font: var(--fs-micro) var(--ff-mono); border: 1px dashed var(--border-color); }
 @media (max-width: 900px) {
   .track-row { grid-template-columns: minmax(0, 1fr) repeat(3, auto); }
   .track-preview, .track-preview-empty { grid-column: 1 / -1; grid-row: 2; }
@@ -862,7 +890,7 @@ input[type="range"].hidden-range {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-bottom: none;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -873,22 +901,16 @@ input[type="range"].hidden-range {
   color: var(--text-primary);
   border: 1px solid var(--border-color);
   border-bottom: none;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   padding: 6px 14px;
-  font-family: var(--ff-mono);
-  font-size: 10px;
+  font-family: var(--ff-sans);
+  font-size: var(--fs-micro);
   font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.1s;
   width: fit-content;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-}
-.kb-hdr-btn:hover {
-  background: var(--accent-color);
-  color: var(--bg-main);
-  border-color: var(--accent-color);
-  box-shadow: 0 0 10px var(--accent-glow);
 }
 .kb-drawer {
   width: 100%;
@@ -907,7 +929,7 @@ input[type="range"].hidden-range {
   height: 110px;
   position: relative;
   background: #000;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid #000;
   box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
@@ -963,20 +985,26 @@ input[type="range"].hidden-range {
 }
 .kb-legend {
   font-family: var(--ff-mono);
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-muted);
   text-align: center;
   margin-top: 4px;
 }
 .effect-heading { display: flex; align-items: center; gap: 8px; }
 .effect-remove { display: grid; place-items: center; width: 28px; height: 28px; padding: 4px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; }
-.effect-remove:hover { color: var(--text-primary); background: var(--bg-input); border-radius: 4px; }
+.effect-remove:hover { color: var(--text-primary); background: var(--bg-input); border-radius: var(--radius-sm); }
 .effect-remove svg { width: 14px; height: 14px; }
+.effect-remove:disabled { opacity: .35; cursor: default; }
 .effect-module .toggles-group { margin-top: auto; }
-.effect-module :focus-visible, #addEffect:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+.undo-bar { position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); z-index: 1001; display: flex; align-items: center; gap: 10px; max-width: calc(100% - 24px); padding: 6px 6px 6px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--bg-main); color: var(--text-primary); font: var(--fs-ui) var(--ff-mono); box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
+#undoText { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undo-bar[hidden] { display: none; }
+body.keyboard-open .undo-bar { bottom: 208px; }
 #addEffect { max-width: 170px; }
-#addEffect option, #addEffect optgroup { background: var(--bg-main); color: var(--text-primary); }
 .drag-handle { touch-action: none; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 @media (max-width: 420px) {
   .synth-chassis { padding: 8px; }
   .module-card { padding-inline: 12px; }
@@ -1008,15 +1036,15 @@ input[type="range"].hidden-range {
 
     <!-- PRESET CONTROL AREA -->
     <div class="preset-section" style="display:flex; align-items:center; gap:8px;">
-      <span class="voices-label" style="font-size: 9px; text-transform: uppercase;">Preset:</span>
+      <label class="voices-label" for="presetSelect" style="display:inline; margin:0;">Preset</label>
       <select id="presetSelect">
         <!-- Populated via Javascript -->
       </select>
-      <button class="hdr-btn" id="savePresetBtn" style="padding: 5px 10px; font-size: 11px;">Save</button>
-      <button class="hdr-btn" id="deletePresetBtn" style="padding: 5px 10px; font-size: 11px; display:none; color: var(--led-red); border-color: var(--led-red-dim);">Delete</button>
+      <button class="hdr-btn" id="savePresetBtn">Save</button>
+      <button class="hdr-btn danger" id="deletePresetBtn" style="display:none;">Delete</button>
     </div>
 
-    <select class="hdr-btn" id="addEffect" aria-label="Add module">
+    <select id="addEffect" aria-label="Add module">
       <option value="">+ Module</option>
     </select>
 
@@ -1145,19 +1173,19 @@ input[type="range"].hidden-range {
       <div class="module-header">
         <h2 class="module-title">Glide & Unison</h2>
       </div>
-      <div class="toggles-group">
-        <button class="button-toggle" id="glideOn" data-flag="glideOn">Glide</button>
-        <button class="button-toggle" id="unisonOn" data-flag="unisonOn">Unison</button>
-      </div>
       <div class="concentric-layout-row">
         <div class="concentric-canvas-container">
           <canvas class="concentric-canvas" id="canvas-glide"></canvas>
         </div>
         <div class="concentric-legend" id="legend-glide"></div>
       </div>
+      <div class="toggles-group">
+        <button class="button-toggle" id="glideOn" data-flag="glideOn">Glide</button>
+        <button class="button-toggle" id="unisonOn" data-flag="unisonOn">Unison</button>
+      </div>
       <div>
-        <label class="voices-label" style="display:block;margin-bottom:4px;">Max Polyphony (Voices)</label>
-        <select id="maxVoices" style="width:100%; background: var(--bg-input); color: var(--text-primary); border: 1.5px solid var(--border-color); border-radius: 8px; padding: 6px 12px; font-family: var(--ff-mono); font-size: 11px; cursor: pointer;">
+        <label class="voices-label" for="maxVoices">Max Polyphony</label>
+        <select id="maxVoices">
           <option value="1">1 Voice (Mono)</option>
           <option value="2">2 Voices</option>
           <option value="3">3 Voices</option>
@@ -1185,7 +1213,7 @@ input[type="range"].hidden-range {
         <div class="concentric-legend" id="legend-filter"></div>
       </div>
       <div>
-        <label class="voices-label" style="display:block;margin-bottom:4px;">Keyboard Tracking</label>
+        <label class="voices-label" for="keyTrack">Keyboard Tracking</label>
         <select id="keyTrack">
           <option value="0">Off</option>
           <option value="0.5" selected>50%</option>
@@ -1237,7 +1265,7 @@ input[type="range"].hidden-range {
     <section class="module-card" draggable="true" id="mod-lfo">
       <div class="drag-handle"></div>
       <div class="module-header">
-        <h2 class="module-title">Low Freq Osc</h2>
+        <h2 class="module-title">LFO</h2>
       </div>
       <div class="waveform-selector" data-group="lfoShape">
         <button class="active" data-val="sine">
@@ -1271,7 +1299,7 @@ input[type="range"].hidden-range {
         <button class="button-toggle" id="lfoToOscA" data-flag="lfoToOscA">→ Osc A</button>
         <button class="button-toggle" id="lfoToOscB" data-flag="lfoToOscB">→ Osc B</button>
         <button class="button-toggle" id="lfoToPW" data-flag="lfoToPW">→ PW</button>
-        <button class="button-toggle" id="lfoToFilter" data-flag="lfoToFilter">→ Filt</button>
+        <button class="button-toggle" id="lfoToFilter" data-flag="lfoToFilter">→ Filter</button>
       </div>
       <input type="range" class="hidden-range" id="lfoRate" min="0.05" max="20" value="5" step="0.05">
       <input type="range" class="hidden-range" id="lfoDepth" min="0" max="1" value="0.3" step="0.01">
@@ -1292,7 +1320,7 @@ input[type="range"].hidden-range {
           </thead>
           <tbody>
             <tr data-source="filter-envelope">
-              <td>Filt Env</td>
+              <td>Filter Env</td>
               <td><input type="checkbox" id="polyFE_freqA"></td>
               <td><input type="checkbox" id="polyFE_pw"></td>
               <td><input type="checkbox" id="polyFE_filter"></td>
@@ -1322,15 +1350,15 @@ input[type="range"].hidden-range {
       <div class="module-header">
         <h2 class="module-title">Wheel Mod</h2>
       </div>
-      <div class="toggles-group">
-        <button class="button-toggle on" id="wheelToPitch" data-flag="wheelToPitch">→ Pitch</button>
-        <button class="button-toggle" id="wheelToFilter" data-flag="wheelToFilter">→ Filt</button>
-      </div>
       <div class="concentric-layout-row">
         <div class="concentric-canvas-container">
           <canvas class="concentric-canvas" id="canvas-wheelmod"></canvas>
         </div>
         <div class="concentric-legend" id="legend-wheelmod"></div>
+      </div>
+      <div class="toggles-group">
+        <button class="button-toggle on" id="wheelToPitch" data-flag="wheelToPitch">→ Pitch</button>
+        <button class="button-toggle" id="wheelToFilter" data-flag="wheelToFilter">→ Filter</button>
       </div>
       <input type="range" class="hidden-range" id="wheelAmount" min="0" max="1" value="0.5" step="0.01">
     </section>
@@ -1349,11 +1377,11 @@ input[type="range"].hidden-range {
       </div>
 
       <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
-        <span class="voices-label" style="font-size: 11px;">Octave Shift</span>
+        <span class="voices-label">Octave Shift</span>
         <div class="octave-selector">
-          <button class="octave-btn" id="octaveDown">−</button>
+          <button class="octave-btn" id="octaveDown" aria-label="Octave down">−</button>
           <span class="octave-val" id="octaveVal">0</span>
-          <button class="octave-btn" id="octaveUp">+</button>
+          <button class="octave-btn" id="octaveUp" aria-label="Octave up">+</button>
         </div>
         <input type="range" class="hidden-range" id="octave" min="-3" max="3" value="0" step="1">
       </div>
@@ -1368,15 +1396,15 @@ input[type="range"].hidden-range {
       </div>
 
       <!-- Relocated Connection panel -->
-      <div class="midi-connection-panel" style="display:flex; flex-direction:column; gap:8px; background:var(--bg-input); padding:10px; border-radius:8px; border:1px solid var(--border-color);">
+      <div class="midi-connection-panel" style="display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-          <button class="hdr-btn" id="connectBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Connect MIDI</button>
-          <button class="hdr-btn" id="testBtn" style="padding: 4px 10px; font-size: 10px; flex: 1;">Test C4</button>
+          <button class="hdr-btn" id="connectBtn" style="flex: 1;">Connect MIDI</button>
+          <button class="hdr-btn" id="testBtn" style="flex: 1;">Test C4</button>
         </div>
-        <select id="deviceSelect" style="width:100%;"><option>Waiting...</option></select>
+        <select id="deviceSelect" aria-label="MIDI input device"><option>No device</option></select>
         <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
           <div class="midi-dot" id="dot"></div>
-          <span class="midi-text" id="statusText" style="font-size:10px; color: var(--text-primary);">MIDI Disconnected</span>
+          <span class="midi-text" id="statusText">MIDI Disconnected</span>
         </div>
       </div>
     </section>
@@ -1410,7 +1438,7 @@ input[type="range"].hidden-range {
       </div>
       <div class="performance-toolbar">
         <button class="button-toggle" id="seqPlay">Play</button>
-        <button class="button-toggle" id="seqStop">Stop</button>
+        <button class="hdr-btn" id="seqStop">Stop</button>
         <button class="hdr-btn" id="seqClear">Clear</button>
         <div class="performance-field"><label for="seqBpm">BPM</label><input id="seqBpm" type="number" min="40" max="240" value="120"></div>
         <div class="performance-field"><label for="seqLength">Roll Length</label><input id="seqLength" type="number" min="1" max="128" step="1" value="16"></div>
@@ -1429,9 +1457,9 @@ input[type="range"].hidden-range {
       <div class="performance-toolbar">
         <button class="button-toggle" id="recRecord">Record</button>
         <button class="button-toggle" id="recPlay">Play</button>
-        <button class="button-toggle" id="recStop">Stop</button>
+        <button class="hdr-btn" id="recStop">Stop</button>
         <button class="hdr-btn" id="recAddTrack">+ Track</button>
-        <span id="recStatus" role="status">Ready</span>
+        <span class="midi-text" id="recStatus" role="status">Ready</span>
       </div>
       <div class="track-list" id="recTracks"></div>
     </section>
@@ -1446,6 +1474,13 @@ input[type="range"].hidden-range {
     </section>
 
   </main>
+
+  <!-- ============ UNDO BAR (destructive actions run at once and stay reversible) ============ -->
+  <div class="undo-bar" id="undoBar" role="status" hidden>
+    <span id="undoText"></span>
+    <button class="hdr-btn" id="undoBtn" type="button">Undo</button>
+    <button class="effect-remove" id="undoDismiss" type="button" aria-label="Dismiss"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+  </div>
 
   <!-- ============ DRAWER KEYBOARD ============ -->
   <section class="keyboard-section">
@@ -1462,6 +1497,39 @@ input[type="range"].hidden-range {
 // Global tracking of dial instances to allow program preset loading
 window.dialInstances = [];
 let currentHue = 120;
+
+// ================================================================
+//  UNDO BAR: one policy for every destructive action
+// ================================================================
+// The action runs immediately; this offers a single-slot undo instead of a native confirm().
+let undoAction = null, undoTimer = null;
+function dismissUndo() {
+  clearTimeout(undoTimer); undoAction = null;
+  document.getElementById("undoBar").hidden = true;
+}
+function offerUndo(message, restore, sticky = false) {
+  clearTimeout(undoTimer); undoAction = restore;
+  document.getElementById("undoText").textContent = message;
+  document.getElementById("undoBar").hidden = false;
+  if (!sticky) undoTimer = setTimeout(dismissUndo, 8000);
+}
+function expireUndoSoon() {
+  if (!undoAction) return;
+  clearTimeout(undoTimer); undoTimer = setTimeout(dismissUndo, 8000);
+}
+document.getElementById("undoBtn").addEventListener("click", () => { const restore = undoAction; dismissUndo(); restore?.(); });
+document.getElementById("undoDismiss").addEventListener("click", dismissUndo);
+
+// Toggles and waveform buttons show state with a class set from many places (clicks, presets,
+// MIDI, restore). ponytail: one observer mirrors that class into aria-pressed instead of
+// touching every call site; switch to an explicit setter if toggles ever need more state.
+const PRESSABLE = ".button-toggle, .waveform-selector button";
+const syncPressed = button => button.setAttribute("aria-pressed", String(button.classList.contains("on") || button.classList.contains("active")));
+document.querySelectorAll(PRESSABLE).forEach(syncPressed);
+new MutationObserver(records => records.forEach(record => {
+  if (record.type === "attributes") { if (record.target.matches(PRESSABLE)) syncPressed(record.target); return; }
+  record.addedNodes.forEach(node => { if (node.nodeType === 1) { if (node.matches(PRESSABLE)) syncPressed(node); node.querySelectorAll(PRESSABLE).forEach(syncPressed); } });
+})).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["class"] });
 let currentSat = 80;
 let pulseAmp = 0;
 
@@ -1539,22 +1607,22 @@ const formatters = {
   mixA: { label: 'Osc A', fmt: v => Math.round(v * 100) + "%" },
   mixB: { label: 'Osc B', fmt: v => Math.round(v * 100) + "%" },
   mixNoise: { label: 'Noise', fmt: v => Math.round(v * 100) + "%" },
-  glideTime: { label: 'Glide', fmt: v => v.toFixed(2) + "s" },
+  glideTime: { label: 'Glide', fmt: v => v.toFixed(2) + " s" },
   unisonDetune: { label: 'Detune', fmt: v => Math.round(v) + " ct" },
   cutoff: { label: 'Cutoff', fmt: v => Math.round(v) + " Hz" },
   resonance: { label: 'Reson.', fmt: v => v.toFixed(2) },
   filterEnvAmount: { label: 'Env Amt', fmt: v => v.toFixed(2) },
-  fAttack: { label: 'Attack', fmt: v => v.toFixed(2) + "s" },
-  fDecay: { label: 'Decay', fmt: v => v.toFixed(2) + "s" },
+  fAttack: { label: 'Attack', fmt: v => v.toFixed(2) + " s" },
+  fDecay: { label: 'Decay', fmt: v => v.toFixed(2) + " s" },
   fSustain: { label: 'Sustain', fmt: v => v.toFixed(2) },
-  fRelease: { label: 'Release', fmt: v => v.toFixed(2) + "s" },
-  aAttack: { label: 'Attack', fmt: v => v.toFixed(2) + "s" },
-  aDecay: { label: 'Decay', fmt: v => v.toFixed(2) + "s" },
+  fRelease: { label: 'Release', fmt: v => v.toFixed(2) + " s" },
+  aAttack: { label: 'Attack', fmt: v => v.toFixed(2) + " s" },
+  aDecay: { label: 'Decay', fmt: v => v.toFixed(2) + " s" },
   aSustain: { label: 'Sustain', fmt: v => v.toFixed(2) },
-  aRelease: { label: 'Release', fmt: v => v.toFixed(2) + "s" },
+  aRelease: { label: 'Release', fmt: v => v.toFixed(2) + " s" },
   lfoRate: { label: 'Rate', fmt: v => v.toFixed(1) + " Hz" },
   lfoDepth: { label: 'Depth', fmt: v => v.toFixed(2) },
-  polyFilterEnvAmt: { label: 'Filt Env', fmt: v => v.toFixed(2) },
+  polyFilterEnvAmt: { label: 'Filter Env', fmt: v => v.toFixed(2) },
   polyOscBAmt: { label: 'Osc B', fmt: v => v.toFixed(2) },
   wheelAmount: { label: 'Amount', fmt: v => v.toFixed(2) },
   masterVolume: { label: 'Volume', fmt: v => Math.round(v * 100) + "%" },
@@ -1624,6 +1692,16 @@ let ringColors = [
   '#09633e'  // Innermost
 ];
 
+// Canvas 2D ignores var(--token) strings, so tokens are resolved to real values here.
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const canvasTheme = {
+  muted: cssVar('--text-muted'),
+  primary: cssVar('--text-primary'),
+  track: cssVar('--dial-track'),
+  mono: cssVar('--ff-mono')
+};
+const DIAL_UNITS = 150; // Every dial is drawn and hit-tested in a 150x150 space
+
 // ================================================================
 //  CONCENTRIC ARC SLIDERS ENGINE
 // ================================================================
@@ -1635,6 +1713,7 @@ class ConcentricGaugeDial {
     if (!this.canvas) return;
 
     this.ctx = this.canvas.getContext('2d');
+    this.canvas.setAttribute('aria-hidden', 'true'); // Visual twin of the named ranges and legend
     this.paramIds = [];
     this.inputs = [];
     this.numRings = 0;
@@ -1651,11 +1730,7 @@ class ConcentricGaugeDial {
     this.events = new AbortController();
     this.parameterEvents = new AbortController();
 
-    // High DPI Support
-    const rect = this.canvas.getBoundingClientRect();
-    this.canvas.width = rect.width * window.devicePixelRatio;
-    this.canvas.height = rect.height * window.devicePixelRatio;
-    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    this.cssSize = 0; // Backing store is (re)sized lazily in draw()
 
     this.setParamIds(paramIds);
     this.initEvents();
@@ -1679,10 +1754,19 @@ class ConcentricGaugeDial {
     this.numRings = paramIds.length;
     this.radii = paramIds.map((_, index) => 63 - index * 11);
     this.buildLegend();
-    this.inputs.forEach((input, index) => input?.addEventListener('input', () => {
-      this.draw();
-      this.updateLegendRow(index);
-    }, { signal: this.parameterEvents.signal }));
+    this.inputs.forEach((input, index) => {
+      if (!input) return;
+      const options = { signal: this.parameterEvents.signal };
+      const row = () => document.getElementById(`row-${paramIds[index]}`);
+      // The range itself is invisible: name it and show keyboard focus on its legend row.
+      if (!input.hasAttribute('aria-label')) input.setAttribute('aria-label', formatters[paramIds[index]].label);
+      input.addEventListener('focus', () => row()?.classList.add('active-row'), options);
+      input.addEventListener('blur', () => row()?.classList.remove('active-row'), options);
+      input.addEventListener('input', () => {
+        this.draw();
+        this.updateLegendRow(index);
+      }, options);
+    });
     this.draw();
   }
 
@@ -1714,7 +1798,18 @@ class ConcentricGaugeDial {
     if (!ctx) return;
     const cx = this.centerX;
     const cy = this.centerY;
-    ctx.clearRect(0, 0, 150, 150);
+
+    // Scale the 150-unit drawing to the rendered size (150px, or 112px on phones).
+    // Checked per draw so breakpoint changes and re-attached modules stay sharp.
+    const size = this.canvas.clientWidth;
+    if (!size) return; // Detached or hidden module
+    if (size !== this.cssSize) {
+      this.cssSize = size;
+      const scale = size / DIAL_UNITS * window.devicePixelRatio;
+      this.canvas.width = this.canvas.height = Math.round(size * window.devicePixelRatio);
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    }
+    ctx.clearRect(0, 0, DIAL_UNITS, DIAL_UNITS);
 
     // Determine visual style based on canvasId
     if (this.canvasId === 'canvas-oscA') {
@@ -1775,8 +1870,8 @@ class ConcentricGaugeDial {
       ctx.stroke();
 
       // Draw center indicator text
-      ctx.fillStyle = 'var(--text-muted)';
-      ctx.font = '9px var(--ff-mono)';
+      ctx.fillStyle = canvasTheme.muted;
+      ctx.font = `9px ${canvasTheme.mono}`;
       ctx.textAlign = 'center';
       if (waveType === 'pulse') {
         ctx.fillText(`DUTY: ${Math.round(pw * 100)}%`, cx, 130);
@@ -1800,7 +1895,7 @@ class ConcentricGaugeDial {
         ctx.beginPath();
         ctx.moveTo(colX, yStart);
         ctx.lineTo(colX, yStart + slotHeight);
-        ctx.strokeStyle = '#202820';
+        ctx.strokeStyle = canvasTheme.track;
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.stroke();
@@ -1817,7 +1912,7 @@ class ConcentricGaugeDial {
         // Draw fader knob handle (horizontal capsule)
         ctx.beginPath();
         ctx.rect(colX - 8, faderY - 4, 16, 8);
-        ctx.fillStyle = '#f0f4f0';
+        ctx.fillStyle = canvasTheme.primary;
         ctx.fill();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
@@ -1874,13 +1969,13 @@ class ConcentricGaugeDial {
       // Draw transparent fill under the curve
       ctx.lineTo(endX, yBase);
       ctx.lineTo(startX, yBase);
-      ctx.fillStyle = 'var(--accent-glow)';
+      ctx.fillStyle = cssVar('--accent-glow');
       ctx.fill();
 
       // Draw XY active pointer dot
       ctx.beginPath();
       ctx.arc(peakX, peakY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = '#f0f4f0';
+      ctx.fillStyle = canvasTheme.primary;
       ctx.fill();
       ctx.strokeStyle = ringColors[1];
       ctx.lineWidth = 1.5;
@@ -1931,7 +2026,7 @@ class ConcentricGaugeDial {
       // Gradient Fill
       ctx.lineTo(p4X, yBase);
       ctx.lineTo(startX, yBase);
-      ctx.fillStyle = 'var(--accent-glow)';
+      ctx.fillStyle = cssVar('--accent-glow');
       ctx.fill();
 
       // Draw interactive handle circles (dots) at vertex points
@@ -1945,7 +2040,7 @@ class ConcentricGaugeDial {
       vertices.forEach((v, idx) => {
         ctx.beginPath();
         ctx.arc(v.x, v.y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#f0f4f0';
+        ctx.fillStyle = canvasTheme.primary;
         ctx.fill();
         ctx.strokeStyle = ringColors[idx % ringColors.length];
         ctx.lineWidth = 1.5;
@@ -2001,7 +2096,7 @@ class ConcentricGaugeDial {
       // Faint bg arch
       ctx.beginPath();
       ctx.arc(cx, cy + 15, radius, startAngle, startAngle + sweepAngle);
-      ctx.strokeStyle = '#202820';
+      ctx.strokeStyle = canvasTheme.track;
       ctx.lineWidth = 8;
       ctx.lineCap = 'round';
       ctx.stroke();
@@ -2017,8 +2112,8 @@ class ConcentricGaugeDial {
       }
 
       // Center percentage text
-      ctx.fillStyle = 'var(--text-primary)';
-      ctx.font = 'bold 16px var(--ff-mono)';
+      ctx.fillStyle = canvasTheme.primary;
+      ctx.font = `bold 16px ${canvasTheme.mono}`;
       ctx.textAlign = 'center';
       ctx.fillText(`${Math.round(norm * 100)}%`, cx, cy + 15);
 
@@ -2045,7 +2140,7 @@ class ConcentricGaugeDial {
       const rightX = cx + 4;
 
       // Draw meter background slot
-      ctx.fillStyle = '#202820';
+      ctx.fillStyle = canvasTheme.track;
       ctx.fillRect(leftX, yStart, meterWidth, meterHeight);
       ctx.fillRect(rightX, yStart, meterWidth, meterHeight);
 
@@ -2056,16 +2151,15 @@ class ConcentricGaugeDial {
       ctx.fillStyle = ringColors[0];
       ctx.fillRect(leftX, activeY, meterWidth, activeHeight);
       
-      // Add slight random variation for right channel to simulate stereo
-      const rightVol = clamp(volLevel * (0.9 + Math.random() * 0.2), 0.02, 1.0);
+      const rightVol = volLevel; // The analyser is mono: both bars show the same level
       const rightActiveHeight = rightVol * meterHeight;
       const rightActiveY = yStart + meterHeight - rightActiveHeight;
       ctx.fillStyle = ringColors[1] || ringColors[0];
       ctx.fillRect(rightX, rightActiveY, meterWidth, rightActiveHeight);
 
       // Center tune text
-      ctx.fillStyle = 'var(--text-muted)';
-      ctx.font = '9px var(--ff-mono)';
+      ctx.fillStyle = canvasTheme.muted;
+      ctx.font = `9px ${canvasTheme.mono}`;
       ctx.textAlign = 'center';
       ctx.fillText(`TUNE: ${Math.round((tuneNorm - 0.5) * 200)}ct`, cx, 140);
 
@@ -2081,7 +2175,7 @@ class ConcentricGaugeDial {
 
         ctx.beginPath();
         ctx.arc(cx, cy, radius, startAngle, startAngle + maxSweepAngle);
-        ctx.strokeStyle = '#202820';
+        ctx.strokeStyle = canvasTheme.track;
         ctx.lineWidth = this.thickness;
         ctx.lineCap = 'round';
         ctx.stroke();
@@ -2236,6 +2330,13 @@ class ConcentricGaugeDial {
     }
   }
 
+  // Pointer position in the 150-unit drawing space, whatever the rendered size.
+  toDialUnits(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const k = DIAL_UNITS / (rect.width || DIAL_UNITS);
+    return { x: (clientX - rect.left) * k, y: (clientY - rect.top) * k };
+  }
+
   getRingIndexAt(x, y) {
     const dx = x - this.centerX;
     const dy = y - this.centerY;
@@ -2259,9 +2360,7 @@ class ConcentricGaugeDial {
     let startVal = 0;
 
     const handleStart = (clientX, clientY) => {
-      const rect = this.canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
+      const { x, y } = this.toDialUnits(clientX, clientY);
 
       // Custom start drag handling per canvas type
       if (this.canvasId === 'canvas-filter') {
@@ -2307,9 +2406,7 @@ class ConcentricGaugeDial {
       if (!this.isDragging) return;
 
       if (this.canvasId === 'canvas-filter') {
-        const rect = this.canvas.getBoundingClientRect();
-        const x = clientX - rect.left;
-        const y = clientY - rect.top;
+        const { x, y } = this.toDialUnits(clientX, clientY);
         const cutoffNorm = clamp((x - 15) / 120, 0, 1);
         this.setNormValue(0, cutoffNorm);
         const resoNorm = clamp((120 - y) / 90, 0, 1);
@@ -2386,7 +2483,8 @@ window.addEventListener('DOMContentLoaded', () => {
   initPresetsSystem();
   restoreLayoutState();
   window.renderEffects();
-
+  // Canvas captions fall back to a system font until Share Tech Mono arrives.
+  document.fonts?.ready.then(() => window.dialInstances.forEach(dial => dial.draw()));
 
 
   // Start visualizer animation loop for real-time widgets (LFO scrolling, VU Meter)
@@ -2606,7 +2704,10 @@ function syncModuleDependencies() {
   document.querySelectorAll('#mod-polymod th:last-child, #mod-polymod td:last-child').forEach(el => show(el, filter));
   show(document.getElementById("wheelToFilter"), filter);
   const wheel = synthModuleCards.get("mod-wheelmod") || document.getElementById("mod-wheelmod");
-  if (wheel) wheel.classList.toggle("module-unavailable", !lfo);
+  if (wheel) {
+    wheel.classList.toggle("module-unavailable", !lfo);
+    wheel.querySelectorAll(".concentric-layout-row, .toggles-group").forEach(element => { element.inert = !lfo; });
+  }
   const dial = canvasId => window.dialInstances?.find(item => item.canvasId === canvasId);
   dial("canvas-mixer")?.setParamIds(oscB ? ["mixA", "mixB", "mixNoise"] : ["mixA", "mixNoise"]);
   dial("canvas-filter")?.setParamIds(filterEnv ? ["cutoff", "resonance", "filterEnvAmount"] : ["cutoff", "resonance"]);
@@ -2647,7 +2748,7 @@ function initSynthModulesUI() {
     remove.type = "button"; remove.setAttribute("aria-label", `Remove ${name}`); remove.title = "Remove module";
     remove.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
     card.querySelector(".module-header").appendChild(remove);
-    remove.addEventListener("click", () => setSynthModules([...activeSynthModules].filter(active => active !== id)));
+    remove.addEventListener("click", () => { setSynthModules([...activeSynthModules].filter(active => active !== id)); add.focus(); });
     handle.addEventListener("keydown", event => {
       if (!event.altKey || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
       event.preventDefault();
@@ -2911,7 +3012,7 @@ function initEffectsUI() {
       const dial = dials.get(item.type);
       for (const key of Object.keys(definition.params)) document.getElementById(`fx-${item.type}-${key}`).value = item.params[key];
       const enabled = document.getElementById(`fx-${item.type}-enabled`);
-      enabled.textContent = item.enabled ? 'Enabled' : 'Bypass'; enabled.classList.toggle('on', item.enabled); enabled.setAttribute('aria-pressed', String(item.enabled));
+      enabled.classList.toggle('on', item.enabled);
       dial.draw(); dial.paramIds.forEach((id, index) => dial.updateLegendRow(index));
     }
     // Preserve the positions of non-effect cards when a preset changes effect order.
@@ -3039,6 +3140,19 @@ const sampler = (() => {
     saveActiveState();
   }
 
+  // Replacing a filled pad is reversible: keep what it held and offer it back.
+  function snapshotPad(index) {
+    const { buffer, blob, data, name } = pads[index];
+    return buffer ? { buffer, blob, data, name } : null;
+  }
+  function offerPadUndo(index, previous) {
+    if (!previous) return;
+    offerUndo(`Pad ${index + 1} replaced.`, () => {
+      stopSource(pads[index]); Object.assign(pads[index], previous);
+      render(); saveActiveState(); setStatus(`Pad ${index + 1} restored.`);
+    });
+  }
+
   async function stopRecording(discard = false) {
     if (!activeRecording) return;
     const recording = activeRecording;
@@ -3069,8 +3183,10 @@ const sampler = (() => {
         try {
           if (!recording.discard) {
             const blob = new Blob(recording.chunks, { type: recorder.mimeType || "audio/webm" });
+            const previous = snapshotPad(index);
             await storeBlob(index, blob, `Recorded pad ${index + 1}.${fileExtension(blob.type)}`);
             setStatus(`Pad ${index + 1} captured.`);
+            offerPadUndo(index, previous);
             trackEvent("sampler_record", { pad: index + 1 });
           }
         } catch (error) { setStatus(error.message || "Could not save that recording.", true); }
@@ -3106,8 +3222,10 @@ const sampler = (() => {
   async function importFile(index, file) {
     if (!file || !file.type.startsWith("audio/")) return setStatus("Choose a supported audio file.", true);
     try {
+      const previous = snapshotPad(index);
       await storeBlob(index, file, file.name || `Imported pad ${index + 1}.${fileExtension(file.type)}`);
       setStatus(`Loaded ${file.name || `audio into pad ${index + 1}`}.`);
+      offerPadUndo(index, previous);
       trackEvent("sampler_import", { pad: index + 1, type: file.type });
     } catch (error) { setStatus(error.message || "Could not load that audio file.", true); }
   }
@@ -3800,19 +3918,19 @@ const sliderMap = {
   mixA: { fmt: v => Math.round(v * 100) + "%" },
   mixB: { fmt: v => Math.round(v * 100) + "%" },
   mixNoise: { fmt: v => Math.round(v * 100) + "%" },
-  glideTime: { fmt: v => v.toFixed(2) + "s" },
+  glideTime: { fmt: v => v.toFixed(2) + " s" },
   unisonDetune: { fmt: v => Math.round(v) + " ct" },
   cutoff: { fmt: v => Math.round(v) + " Hz" },
   resonance: { fmt: v => v.toFixed(2) },
   filterEnvAmount: { fmt: v => v.toFixed(2) },
-  fAttack: { fmt: v => v.toFixed(2) + "s" },
-  fDecay: { fmt: v => v.toFixed(2) + "s" },
+  fAttack: { fmt: v => v.toFixed(2) + " s" },
+  fDecay: { fmt: v => v.toFixed(2) + " s" },
   fSustain: { fmt: v => v.toFixed(2) },
-  fRelease: { fmt: v => v.toFixed(2) + "s" },
-  aAttack: { fmt: v => v.toFixed(2) + "s" },
-  aDecay: { fmt: v => v.toFixed(2) + "s" },
+  fRelease: { fmt: v => v.toFixed(2) + " s" },
+  aAttack: { fmt: v => v.toFixed(2) + " s" },
+  aDecay: { fmt: v => v.toFixed(2) + " s" },
   aSustain: { fmt: v => v.toFixed(2) },
-  aRelease: { fmt: v => v.toFixed(2) + "s" },
+  aRelease: { fmt: v => v.toFixed(2) + " s" },
   masterVolume: { fmt: v => Math.round(v * 100) + "%" },
   masterTune: { fmt: v => Math.round(v) + " ct" },
   lfoRate: { fmt: v => v.toFixed(1) + " Hz" },
@@ -3910,8 +4028,10 @@ document.getElementById("testBtn").addEventListener("click", () => {
 // ============ On Screen Keyboard ============
 const keyboardEl = document.getElementById("keyboard");
 const startNote = 48;
-const totalWhite = 21;
+// Three octaves need ~600px to stay playable; phones get ten white keys and use Octave Shift for range.
+const narrowKeyboard = window.matchMedia("(max-width: 600px)");
 function buildKeyboard() {
+  const totalWhite = narrowKeyboard.matches ? 10 : 21;
   keyboardEl.innerHTML = "";
   const isBlack = pc => [1, 3, 6, 8, 10].includes(pc % 12);
   let whites = 0, cur = startNote;
@@ -3959,6 +4079,7 @@ function buildKeyboard() {
   });
 }
 buildKeyboard();
+narrowKeyboard.addEventListener("change", () => { allNotesOff(); buildKeyboard(); });
 
 // Flash key based on physical octave offset
 function flashKey(note, on) {
@@ -4047,8 +4168,12 @@ function stopSequencer() {
   sequencerNotes.forEach((count, note) => { for (let index = 0; index < count; index++) noteOff(note, "sequencer"); }); sequencerNotes.clear();
   sequencerState.current = -1; renderSequencerPlayhead();
 }
+function offerSequencerUndo(message, before) {
+  offerUndo(message, () => { stopSequencer(); restoreSequencer(before); saveActiveState(); });
+}
 function clearSequencer() {
-  if (!confirm("Clear every programmed step?")) return;
+  const before = serializeSequencer();
+  if (before.steps.some(step => step.active)) offerSequencerUndo("Sequencer cleared.", before);
   stopSequencer();
   sequencerState.steps.forEach(step => { step.active = false; step.note = 60; step.velocity = 100; });
   sequencerState.selected = 0; renderSequencer(); saveActiveState();
@@ -4104,7 +4229,13 @@ function initSequencer() {
   document.getElementById("seqStop").addEventListener("click", stopSequencer);
   document.getElementById("seqClear").addEventListener("click", clearSequencer);
   document.getElementById("seqBpm").addEventListener("change", event => { sequencerState.bpm = clamp(Number(event.target.value), 40, 240); saveActiveState(); if (sequencerState.running) { clearTimeout(sequencerTimer); sequencerTick(); } });
-  document.getElementById("seqLength").addEventListener("change", event => { setSequencerLength(event.target.value); saveActiveState(); renderSequencer(); });
+  document.getElementById("seqLength").addEventListener("change", event => {
+    const before = serializeSequencer();
+    setSequencerLength(event.target.value);
+    const lost = before.steps.slice(sequencerState.steps.length).filter(step => step.active).length;
+    if (lost) offerSequencerUndo(`Roll shortened: ${lost} note${lost === 1 ? "" : "s"} removed.`, before);
+    saveActiveState(); renderSequencer();
+  });
   document.getElementById("seqGate").addEventListener("change", event => { sequencerState.gate = clamp(Number(event.target.value), 10, 100); saveActiveState(); renderSequencer(); });
   document.getElementById("seqNote").addEventListener("change", event => { const step = sequencerState.steps[sequencerState.selected]; step.note = Number(event.target.value); step.active = true; saveActiveState(); renderSequencer(); });
   document.getElementById("seqVelocity").addEventListener("change", event => { const step = sequencerState.steps[sequencerState.selected]; step.velocity = clamp(Number(event.target.value), 1, 127); step.active = true; saveActiveState(); renderSequencer(); });
@@ -4179,14 +4310,35 @@ function disposeRecorderPlaybackContexts() {
   recorderPlaybackContexts = [];
 }
 function stopMidiRecorder(persist = true) {
+  if (midiRecorderState.recording) expireUndoSoon();
   midiRecorderState.recording = false; midiRecorderState.playing = false;
   recorderTimers.forEach(clearTimeout); recorderTimers = []; allNotesOff(); disposeRecorderPlaybackContexts();
   document.getElementById("recStatus").textContent = "Ready"; renderMidiRecorder();
   if (persist) saveActiveState();
 }
+function offerRecorderUndo(message, before) {
+  offerUndo(message, () => {
+    stopMidiRecorder(false); restoreMidiRecorder(before);
+    // Re-apply the restored track's patch, or the next autosave would overwrite it with the current controls.
+    applyRecorderTrackPatch(armedRecorderTrack()); saveActiveState();
+  });
+}
 function startMidiRecording() {
   stopMidiRecorder();
-  const track = armedRecorderTrack(); track.events = []; track.duration = 0; track.patch = captureSynthPatch();
+  const track = armedRecorderTrack();
+  if (track.events.length) {
+    // Sticky while the new take runs (stopMidiRecorder starts its countdown). Restores this
+    // track only, so work done on other tracks in the meantime survives the undo.
+    const previous = { events: track.events, duration: track.duration, patch: cloneRecorderPatch(track.patch) };
+    offerUndo(`Previous take on ${track.name} replaced.`, () => {
+      stopMidiRecorder(false);
+      if (!midiRecorderState.tracks.includes(track)) return;
+      Object.assign(track, previous);
+      if (track === armedRecorderTrack()) applyRecorderTrackPatch(track);
+      renderMidiRecorder(); saveActiveState();
+    }, true);
+  }
+  track.events = []; track.duration = 0; track.patch = captureSynthPatch();
   midiRecorderState.recording = true; midiRecorderState.startedAt = performance.now();
   document.getElementById("recStatus").textContent = `Recording ${track.name}`; renderMidiRecorder();
 }
@@ -4269,7 +4421,7 @@ function renderMidiRecorder() {
   const list = document.getElementById("recTracks"); if (!list) return;
   list.innerHTML = midiRecorderState.tracks.map(track => {
     const name = escapeHtmlText(track.name);
-    return `<div class="track-row${track.id === midiRecorderState.activeTrackId ? " armed" : ""}" data-track="${track.id}" tabindex="0" role="button" aria-label="Select ${name}"><span class="track-name">${name}</span>${recorderPreviewMarkup(track)}<button class="button-toggle${track.id === midiRecorderState.activeTrackId ? " on" : ""}" data-action="arm">Arm</button><button class="button-toggle${track.mute ? " on" : ""}" data-action="mute">Mute</button><button class="button-toggle${track.solo ? " on" : ""}" data-action="solo">Solo</button><span class="track-meta">${track.events.length} events · ${(track.duration / 1000).toFixed(1)}s</span><div class="track-actions"><button class="effect-remove" data-action="rename" aria-label="Rename ${name}" title="Rename track"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 13l3-.7L13 5.3 10.7 3 3.7 10zM9.8 3.8l2.4 2.4"/></svg></button><button class="effect-remove" data-action="clear" aria-label="Clear ${name}" title="Clear track"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 11l6-7 4 4-4 5H5zM8 13h5"/></svg></button><button class="effect-remove" data-action="remove" aria-label="Remove ${name}" title="Remove track"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div></div>`;
+    return `<div class="track-row${track.id === midiRecorderState.activeTrackId ? " armed" : ""}" data-track="${track.id}" tabindex="0" role="button" aria-label="Select ${name}"><span class="track-name">${name}</span>${recorderPreviewMarkup(track)}<button class="button-toggle${track.id === midiRecorderState.activeTrackId ? " on" : ""}" data-action="arm" aria-pressed="${track.id === midiRecorderState.activeTrackId}">Arm</button><button class="button-toggle${track.mute ? " on" : ""}" data-action="mute" aria-pressed="${track.mute}">Mute</button><button class="button-toggle${track.solo ? " on" : ""}" data-action="solo" aria-pressed="${track.solo}">Solo</button><span class="track-meta">${track.events.length} events · ${(track.duration / 1000).toFixed(1)}s</span><div class="track-actions"><button class="effect-remove" data-action="rename" aria-label="Rename ${name}" title="Rename track"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 13l3-.7L13 5.3 10.7 3 3.7 10zM9.8 3.8l2.4 2.4"/></svg></button><button class="effect-remove" data-action="clear" aria-label="Clear ${name}" title="Clear track"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 11l6-7 4 4-4 5H5zM8 13h5"/></svg></button><button class="effect-remove" data-action="remove" aria-label="Remove ${name}" title="${midiRecorderState.tracks.length > 1 ? "Remove track" : "The last track cannot be removed"}"${midiRecorderState.tracks.length > 1 ? "" : " disabled"}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div></div>`;
   }).join("");
   document.getElementById("recRecord").classList.toggle("on", midiRecorderState.recording);
   document.getElementById("recPlay").classList.toggle("on", midiRecorderState.playing);
@@ -4296,10 +4448,12 @@ function initMidiRecorder() {
       const name = prompt("Track name:", track.name)?.trim();
       if (name) track.name = name.slice(0, 32);
     }
-    if (action === "clear" && confirm(`Clear all MIDI events from ${track.name}?`)) {
+    if (action === "clear" && track.events.length) {
+      offerRecorderUndo(`${track.name} cleared.`, serializeMidiRecorder());
       stopMidiRecorder(false); track.events = []; track.duration = 0;
     }
     if (action === "remove" && midiRecorderState.tracks.length > 1) {
+      offerRecorderUndo(`${track.name} removed.`, serializeMidiRecorder());
       const removingActive = midiRecorderState.activeTrackId === id;
       midiRecorderState.tracks = midiRecorderState.tracks.filter(item => item.id !== id);
       if (removingActive) { selectRecorderTrack(midiRecorderState.tracks[0].id); return; }
@@ -4440,7 +4594,7 @@ async function initMIDI() {
       log("MIDI access granted (SysEx disabled).");
       trackEvent('midi_connection', { status: 'success', sysex: false });
     } catch (fallbackErr) {
-      statusText.textContent = "Permission denied";
+      statusText.textContent = "MIDI permission denied";
       log("Could not access MIDI: " + fallbackErr.message);
       trackEvent('midi_connection', { status: 'permission_denied', error: fallbackErr.message });
     }
@@ -4451,9 +4605,9 @@ function populateDevices() {
   deviceSelect.innerHTML = "";
   const inputs = Array.from(midiAccess.inputs.values());
   if (inputs.length === 0) {
-    deviceSelect.innerHTML = "<option>None</option>";
+    deviceSelect.innerHTML = "<option>No device</option>";
     dot.classList.remove("on");
-    statusText.textContent = "No MIDI";
+    statusText.textContent = "No MIDI device found";
     return;
   }
   inputs.forEach(input => {
@@ -4484,7 +4638,7 @@ function populateDevices() {
       deviceSelect.value = currentInput.id;
     } else {
       dot.classList.remove("on");
-      statusText.textContent = "Disconnected";
+      statusText.textContent = "MIDI Disconnected";
       log("The active device was disconnected.");
     }
   }
@@ -5466,6 +5620,20 @@ function initPresetsSystem() {
     }
   });
 
+  // Undo for overwrite/delete: put the preset back, select it and load it.
+  function restoreUserPreset(name, data) {
+    userPresets[name] = data;
+    try {
+      localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));
+    } catch(e) {
+      console.warn("Could not save to localStorage", e);
+    }
+    populatePresetsDropdown();
+    select.value = "user_" + name;
+    select.dispatchEvent(new Event("change"));
+    log(`Preset restored: "${name}"`);
+  }
+
   // Handle Saving new Presets
   saveBtn.addEventListener("click", () => {
     const name = prompt("Enter a name for the new preset:");
@@ -5474,7 +5642,9 @@ function initPresetsSystem() {
 
     // Clone parameter state and append visual octave shift
     const presetData = { ...P, octave: octaveShift, effects: effectRack.serialize(), modules: getActiveSynthModules(), modulesVersion: 4 };
+    const overwritten = userPresets[cleanName];
     userPresets[cleanName] = presetData;
+    if (overwritten) offerUndo(`Preset "${cleanName}" overwritten.`, () => restoreUserPreset(cleanName, overwritten));
     
     try {
       localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));
@@ -5496,7 +5666,9 @@ function initPresetsSystem() {
     if (!val.startsWith("user_")) return;
     const name = val.replace("user_", "");
 
-    if (confirm(`Delete the preset "${name}"?`)) {
+    {
+      const removed = userPresets[name];
+      offerUndo(`Preset "${name}" deleted.`, () => restoreUserPreset(name, removed));
       delete userPresets[name];
       try {
         localStorage.setItem("prophet_concentric_presets", JSON.stringify(userPresets));

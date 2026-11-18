@@ -35,7 +35,7 @@ Everything lives in `index.html`: styles, markup, and the synth engine in one fi
 - **`presetCategories`** — an ordered map of category label → preset names, used only to group the dropdown. A preset not listed there falls back to an "Outros" group, so nothing silently disappears.
 - **MIDI Learn** — `ccMaps` holds CC-number → parameter-name mappings per bank; `onMIDIMessage` looks up the mapping and writes straight into `P`. Click a "LRN" button, turn a knob, done.
 - **Sequencer and recorder** — the sequencer schedules piano-roll notes; each recorder track stores MIDI events plus a complete patch snapshot and plays through its own synth/effects context so multiple tracks retain their recorded sound.
-- **Persistence** — active patch, module/effect layout, CC maps, sequencer pattern, and recorder tracks are autosaved to `localStorage` so a page refresh doesn't lose your session.
+- **Persistence** — active patch, user presets, module/effect layout, CC maps, sequencer pattern, recorder tracks, and sampler pad audio (base64, 2 MB total across the four pads) are autosaved to `localStorage` so a page refresh doesn't lose your session. `localStorage` is the only storage used; MIDI is input only.
 
 ## Running locally
 

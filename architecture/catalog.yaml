@@ -7,6 +7,8 @@ technologies:
     name: Web Audio API
   - id: web-midi
     name: Web MIDI API
+  - id: media-recorder
+    name: MediaStream Recording API
   - id: local-storage
     name: localStorage
   - id: nginx

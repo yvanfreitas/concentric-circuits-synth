@@ -13,7 +13,7 @@ connections:
     technologies: [ https ]
   - id: plays
     to: synth
-    label: Plays on screen and edits patches
+    label: "Plays, edits patches, records pads"
   - id: plays-controller
     to: midi-controller
     label: "Plays keys, pads and knobs"

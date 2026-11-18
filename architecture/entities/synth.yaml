@@ -10,8 +10,12 @@ description: |
   Styles, markup and the synth engine in one file. Holds the parameter object
   P, the per-voice Web Audio graph and effects rack, the concentric dial UI,
   factory presets, MIDI Learn, the piano-roll sequencer, the multitrack MIDI
-  recorder and the sampler pads.
-technologies: [ html, web-audio, web-midi ]
+  recorder and the sampler pads. Each of the four pads takes a microphone take
+  from the musician (getUserMedia + MediaRecorder, stopped after 4 seconds) or
+  an imported audio file, and can export its audio as a file download. Pad
+  audio is autosaved with the rest of the session, so it survives a reload.
+  MIDI is input only.
+technologies: [ html, web-audio, web-midi, media-recorder ]
 
 connections:
   - id: state

@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/flow.json
+
+id: deploy
+name: Deploy
+description: A push to main becomes a new Cloud Run revision; there is no staging step.
+drawing: pro-v
+
+steps:
+  - id: pushes-to-main
+    via: developer.push
+    text: Pushes to main
+  - id: deploys
+    via: github-actions.deploy
+    text: Runs gcloud run deploy --source . for mpk-prophet5-synth

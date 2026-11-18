@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/flow.json
+
+id: play-with-midi
+name: Play with a MIDI controller
+description: Notes and knob turns arrive over Web MIDI, drive the Web Audio voices and mapped parameters, and the resulting patch is autosaved.
+drawing: pro-v
+
+steps:
+  - id: plays-the-controller
+    via: musician.plays-controller
+    text: Plays keys and turns knobs
+  - id: receives-midi
+    via: midi-controller.midi-in
+    text: "Note on/off plays voices; learned CCs write into P"
+  - id: autosaves
+    via: synth.state
+    text: Autosaves the active patch and CC maps
+  - id: tracks-usage
+    via: synth.analytics
+    text: Sends note_played and synth_param_change events

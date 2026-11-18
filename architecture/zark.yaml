@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/config.json
+
+schema: 1
+name: Pro-V
+defaultDrawing: context
+grid: 8
+render:
+  commit: pr
+  scale: 2
+  theme: light
+git:
+  baseBranch: main
+  branchPrefix: zark/

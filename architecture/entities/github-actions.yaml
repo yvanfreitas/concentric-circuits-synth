@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: github-actions
+name: GitHub Actions
+kind: system
+caption: deploy.yml and browser-tests.yml
+icon: si:githubactions
+description: |
+  Every push to main runs gcloud run deploy --source ., authenticated with the
+  github-deployer service account key (GCP_SA_KEY secret). Pull requests run
+  the Chromium regression scripts under test/.
+external: true
+technologies: [ github-actions ]
+
+connections:
+  - id: deploy
+    to: web-server
+    label: Builds and deploys a new revision
+    technologies: [ cloud-run ]

@@ -1,0 +1,25 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/catalog.json
+
+technologies:
+  - id: html
+    name: HTML + vanilla JS
+  - id: web-audio
+    name: Web Audio API
+  - id: web-midi
+    name: Web MIDI API
+  - id: local-storage
+    name: localStorage
+  - id: nginx
+    name: nginx
+  - id: cloud-run
+    name: Cloud Run
+  - id: github-actions
+    name: GitHub Actions
+  - id: ga4
+    name: Google Analytics 4 (gtag.js)
+  - id: https
+    name: HTTPS
+tags:
+  []
+teams:
+  []

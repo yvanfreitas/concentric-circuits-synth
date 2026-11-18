@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: google-analytics
+name: Google Analytics
+kind: system
+caption: GA4 via gtag.js
+icon: si:googleanalytics
+description: |
+  Optional: gtag.js is only loaded when the ga-measurement-id meta tag in
+  index.html holds a real Measurement ID.
+external: true

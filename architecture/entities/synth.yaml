@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: synth
+name: Synth page
+kind: app
+parent: pro-v
+caption: index.html in the browser
+icon: lucide:keyboard-music
+description: |
+  Styles, markup and the synth engine in one file. Holds the parameter object
+  P, the per-voice Web Audio graph and effects rack, the concentric dial UI,
+  factory presets, MIDI Learn, the piano-roll sequencer, the multitrack MIDI
+  recorder and the sampler pads.
+technologies: [ html, web-audio, web-midi ]
+
+connections:
+  - id: state
+    to: browser-storage
+    label: Saves and restores the session
+    technologies: [ local-storage ]
+  - id: fonts
+    to: google-fonts
+    label: Loads the web fonts stylesheet
+    technologies: [ https ]
+  - id: analytics
+    to: google-analytics
+    label: Sends page views and usage events
+    technologies: [ ga4 ]

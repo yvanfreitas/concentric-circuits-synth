@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: pro-v
+name: Pro-V
+kind: system
+caption: Browser MIDI synthesizer
+icon: lucide:audio-waveform
+description: |
+  Browser synthesizer modeled after the Prophet-5 / OB-Xa lineage. A single
+  HTML file with no build step and no backend: nginx on Cloud Run only serves
+  the file, and everything else runs in the musician's browser.
+links:
+  - label: Live
+    url: https://midi-synth.ew.codes/

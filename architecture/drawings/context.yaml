@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/drawing.json
+
+id: context
+name: Context
+description: Pro-V at a glance, from the musician and the MIDI controller to the services the page calls and the pipeline that ships it.
+scope: null
+
+nodes:
+  developer: { x: 0, y: 640 }
+  github-actions: { x: 448, y: 640 }
+  google-analytics: { x: 896, y: 320 }
+  google-fonts: { x: 896, y: 0 }
+  midi-controller: { x: 0, y: 320 }
+  musician: { x: 0, y: 0 }
+  pro-v: { x: 448, y: 160 }
+
+edges:
+  developer.push: { shape: straight }
+  github-actions.deploy: { shape: straight }
+  midi-controller.midi-in: { shape: auto }
+  musician.plays: { shape: auto }
+  musician.plays-controller: { shape: auto }
+  synth.analytics: { shape: auto }
+  synth.fonts: { shape: auto }

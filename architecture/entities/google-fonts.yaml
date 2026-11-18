@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: google-fonts
+name: Google Fonts
+kind: system
+caption: fonts.googleapis.com
+icon: si:googlefonts
+external: true

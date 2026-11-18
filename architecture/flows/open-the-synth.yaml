@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/flow.json
+
+id: open-the-synth
+name: Open the synth
+description: The page loads as a single file, restores the last session from localStorage and, when a Measurement ID is set, reports the page view.
+drawing: pro-v
+
+steps:
+  - id: opens-the-site
+    via: musician.opens
+    text: Opens midi-synth.ew.codes
+  - id: serves-the-page
+    via: web-server.serves
+    text: Serves index.html
+  - id: loads-fonts
+    via: synth.fonts
+    text: Loads the fonts stylesheet
+  - id: restores-session
+    via: synth.state
+    text: "Restores the saved patch, layout and CC maps"
+  - id: reports-page-view
+    via: synth.analytics
+    text: Loads gtag.js and sends the page view

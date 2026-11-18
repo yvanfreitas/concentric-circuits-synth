@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: developer
+name: Developer
+kind: actor
+caption: Edits index.html
+icon: lucide:code
+
+connections:
+  - id: push
+    to: github-actions
+    label: Pushes to main or opens a PR

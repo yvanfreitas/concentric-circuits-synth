@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: web-server
+name: Web server
+kind: app
+parent: pro-v
+caption: nginx on Cloud Run
+icon: si:nginx
+description: |
+  Cloud Run service mpk-prophet5-synth (us-central1), built from the Dockerfile
+  (nginx:alpine listening on $PORT). Serves index.html, robots.txt, sitemap.xml
+  and og-image.png. midi-synth.ew.codes reaches it through a Cloud Run domain
+  mapping.
+technologies: [ nginx, cloud-run ]
+
+connections:
+  - id: serves
+    to: synth
+    label: Serves index.html and static assets
+    technologies: [ https ]

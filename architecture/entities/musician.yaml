@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: musician
+name: Musician
+kind: actor
+caption: Plays and designs sounds
+icon: lucide:user
+
+connections:
+  - id: opens
+    to: web-server
+    label: Opens midi-synth.ew.codes
+    technologies: [ https ]
+  - id: plays
+    to: synth
+    label: Plays on screen and edits patches
+  - id: plays-controller
+    to: midi-controller
+    label: "Plays keys, pads and knobs"

@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/drawing.json
+
+id: pro-v
+name: Pro-V
+description: nginx on Cloud Run serves one HTML file; the synth, its storage and its MIDI and analytics calls all live in the browser.
+scope: pro-v
+
+nodes:
+  browser-storage: { x: 0, y: 480 }
+  developer: { x: 1120, y: -160 }
+  github-actions: { x: 560, y: -160 }
+  google-analytics: { x: 560, y: 480 }
+  google-fonts: { x: 560, y: 160 }
+  midi-controller: { x: -560, y: 320 }
+  musician: { x: -560, y: 0 }
+  synth: { x: 0, y: 160 }
+  web-server: { x: 0, y: -160 }
+
+edges:
+  developer.push: { shape: straight }
+  github-actions.deploy: { shape: straight }
+  midi-controller.midi-in: { shape: auto }
+  musician.opens: { shape: auto }
+  musician.plays: { shape: auto }
+  musician.plays-controller: { shape: auto }
+  synth.analytics: { shape: auto }
+  synth.fonts: { shape: straight }
+  synth.state: { shape: straight }
+  web-server.serves: { shape: straight }

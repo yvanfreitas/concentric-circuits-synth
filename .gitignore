@@ -12,3 +12,4 @@ Thumbs.db
 *.sw?
 .omo/
 .test-tmp/
+.zark/

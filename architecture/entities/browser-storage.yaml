@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: browser-storage
+name: Browser storage
+kind: store
+parent: pro-v
+caption: localStorage
+icon: lucide:hard-drive
+description: |
+  Per-browser session state under the prophet_concentric_* keys: active patch,
+  user presets, module layout, CC maps, selected MIDI device and keyboard panel
+  state. Nothing is stored on a server.
+technologies: [ local-storage ]

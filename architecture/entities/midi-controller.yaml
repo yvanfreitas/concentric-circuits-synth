@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://unpkg.com/zark/schema/entity.json
+
+id: midi-controller
+name: MIDI controller
+kind: system
+caption: Akai MPK Mini MK3
+icon: lucide:piano
+description: |
+  The synth is built for the Akai MPK Mini MK3, but any device the browser
+  lists through Web MIDI can be selected in the MIDI Manager card.
+external: true
+
+connections:
+  - id: midi-in
+    to: synth
+    label: "Sends notes, CC and wheel data"
+    technologies: [ web-midi ]

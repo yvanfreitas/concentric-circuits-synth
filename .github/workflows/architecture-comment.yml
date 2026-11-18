@@ -1,0 +1,62 @@
+# Keeps one comment on the pull request in step with the architecture it changes: the Zark
+# semantic diff plus before/after of every drawing whose committed PNG changed, rewritten on
+# each push. Image URLs are pinned to SHAs, so an old comment never changes under the reader.
+# Nothing is rendered here: commit `npx @ewcodes/zark render` output with the model change.
+name: architecture-comment
+on:
+  pull_request:
+    paths: ["architecture/**"]
+permissions:
+  contents: read
+  pull-requests: write
+concurrency:
+  group: architecture-comment-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  comment:
+    # The token of a fork's pull request is read-only, so it could not comment.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      DIR: architecture
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The head commit, not the merge commit: its SHA is the one the image URLs pin.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Write the comment
+        run: |
+          # The merge base, so changes that landed on the base branch meanwhile do not show up reversed.
+          base=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          url() { echo "https://github.com/$GITHUB_REPOSITORY/blob/$1/$2?raw=true"; }
+          {
+            # ponytail: pinned npx instead of a devDependency, so repos without package.json work too.
+            npx -y @ewcodes/zark@0.3.0 diff --dir "$DIR" --base "$base" --format markdown
+            images=$(git diff --no-renames --name-status "$base" "$HEAD_SHA" -- "$DIR/rendered/*.png")
+            if [ -n "$images" ]; then
+              printf '\n## Drawings\n'
+              while IFS=$'\t' read -r status path; do
+                printf '\n### %s\n\n' "$(basename "$path" .png)"
+                case "$status" in
+                  A) printf '![after](%s)\n' "$(url "$HEAD_SHA" "$path")" ;;
+                  D) printf 'Removed. It was:\n\n![before](%s)\n' "$(url "$base" "$path")" ;;
+                  *) printf '| Before | After |\n| --- | --- |\n| ![before](%s) | ![after](%s) |\n' "$(url "$base" "$path")" "$(url "$HEAD_SHA" "$path")" ;;
+                esac
+              done <<< "$images"
+            fi
+            printf '\n<sub>Updated for %s</sub>\n' "$HEAD_SHA"
+          } > "$RUNNER_TEMP/comment.md"
+      - name: Post or update the comment
+        # ponytail: --edit-last picks the last github-actions comment; switch to a marker
+        # lookup if another workflow ever comments on pull requests too.
+        run: gh pr comment "$PR" --body-file "$RUNNER_TEMP/comment.md" --edit-last --create-if-none
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}

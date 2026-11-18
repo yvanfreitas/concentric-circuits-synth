@@ -7,7 +7,11 @@ caption: Akai MPK Mini MK3
 icon: lucide:piano
 description: |
   The synth is built for the Akai MPK Mini MK3, but any device the browser
-  lists through Web MIDI can be selected in the MIDI Manager card.
+  lists through Web MIDI can be selected in the MIDI Manager card. MIDI is
+  input only: the page reads midiAccess.inputs and never opens an output port
+  or sends anything back (no clock, thru or SysEx), although it asks for SysEx
+  permission when connecting. Notes 36-39 trigger the sampler pads while the
+  Sampler module is present.
 external: true
 
 connections:

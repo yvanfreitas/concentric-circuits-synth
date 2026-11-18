@@ -7,7 +7,17 @@ parent: pro-v
 caption: localStorage
 icon: lucide:hard-drive
 description: |
-  Per-browser session state under the prophet_concentric_* keys: active patch,
-  user presets, module layout, CC maps, selected MIDI device and keyboard panel
-  state. Nothing is stored on a server.
+  localStorage is the only persistence mechanism: no sessionStorage, IndexedDB,
+  Cache API, cookies or service worker. Six JSON keys, per browser:
+  - prophet_concentric_active_state: parameter object P, octave shift, CC bank,
+    selected preset, effects rack, active modules, sequencer pattern, recorder
+    tracks (MIDI events plus a patch snapshot each) and the sampler pads' audio
+    as base64 data URLs (four pads, 2 MB in total)
+  - prophet_concentric_presets: user presets
+  - prophet_concentric_layout_order: module card order
+  - prophet_concentric_ccmaps: MIDI Learn maps for banks A and B
+  - prophet_concentric_midi_device_id: last selected MIDI input
+  - prophet_concentric_kbd_open: on-screen keyboard panel open or closed
+  Nothing is stored on a server. When a write fails (quota), the page keeps
+  running from memory and the sampler reports that audio was not saved.
 technologies: [ local-storage ]

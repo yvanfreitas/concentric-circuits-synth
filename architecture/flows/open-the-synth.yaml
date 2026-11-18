@@ -17,7 +17,7 @@ steps:
     text: Loads the fonts stylesheet
   - id: restores-session
     via: synth.state
-    text: "Restores the saved patch, layout and CC maps"
+    text: "Restores the saved patch, layout, CC maps, sequencer pattern, recorder tracks and sampler pads"
   - id: reports-page-view
     via: synth.analytics
     text: Loads gtag.js and sends the page view
